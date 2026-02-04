@@ -45,6 +45,11 @@ abstract class TelegramMessageAbstract
         return $this;
     }
 
+    public function getReceivers(): array
+    {
+        return $this->receivers;
+    }
+
     public function token(string $token): self
     {
         $this->token = $token;

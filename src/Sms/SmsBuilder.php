@@ -13,7 +13,7 @@ class SmsBuilder
         return new static();
     }
 
-    protected string $body;
+    protected string $body = '';
 
     protected ?string $driver = null;
 

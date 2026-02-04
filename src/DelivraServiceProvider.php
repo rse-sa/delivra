@@ -5,7 +5,9 @@ namespace RSE\Delivra;
 use Illuminate\Notifications\ChannelManager;
 use Illuminate\Support\ServiceProvider;
 use RSE\Delivra\Sms\Channels\SmsChannel;
+use RSE\Delivra\Sms\Sms;
 use RSE\Delivra\Telegram\Channels\TelegramChannel;
+use RSE\Delivra\Telegram\Telegram;
 
 class DelivraServiceProvider extends ServiceProvider
 {
@@ -13,13 +15,13 @@ class DelivraServiceProvider extends ServiceProvider
     {
         $this->mergeConfigFrom(__DIR__.'/../config/delivra.php', 'delivra');
 
-        $this->app->bind('delivra-sms', fn ($app) => new \RSE\Delivra\Sms\Sms(
-            $app->make('config')->get('delivra.sms')
-        ));
+        $this->app->singleton('delivra-sms', function ($app) {
+            return new Sms($app->make('config')->get('delivra.sms'));
+        });
 
-        $this->app->bind('delivra-telegram', fn ($app) => new \RSE\Delivra\Telegram\Telegram(
-            $app->make('config')->get('delivra.telegram')
-        ));
+        $this->app->singleton('delivra-telegram', function ($app) {
+            return new Telegram($app->make('config')->get('delivra.telegram'));
+        });
     }
 
     public function boot(): void

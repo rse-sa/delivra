@@ -217,7 +217,7 @@ class Telegram
                 }
 
                 // Throttle to avoid 429 errors (Telegram limit: ~30 messages/second)
-                sleep(1);
+                usleep(35000); // ~35ms = ~28 messages/second (safe margin)
             } catch (\Throwable $e) {
                 event(new DelivraMessageFailed('telegram', $chatId, $body, $e->getMessage(), $e, null, null, $message));
                 $batch->addFailure($chatId, $e->getMessage());

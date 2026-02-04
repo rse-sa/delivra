@@ -71,7 +71,7 @@ class Sms
         return $this->driver;
     }
 
-    public function send($message = null, $callback = null): SmsResponse|SmsBatchResponse|SmsResponseCollection
+    public function send($message = null, $callback = null): SmsResponse|SmsBatchResponse
     {
         if (is_null($message)) {
             return $this->setBuilder($this->builder)->dispatch();
@@ -88,7 +88,7 @@ class Sms
         return $driver->send();
     }
 
-    public function dispatch(): SmsResponse|SmsBatchResponse|SmsResponseCollection
+    public function dispatch(): SmsResponse|SmsBatchResponse
     {
         $this->driver = $this->builder->getDriver() ?: $this->driver;
 

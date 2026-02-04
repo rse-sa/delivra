@@ -9,10 +9,9 @@ use Illuminate\Support\Str;
 use RSE\Delivra\Sms\SmsBatchResponse;
 use RSE\Delivra\Sms\SmsBuilder;
 use RSE\Delivra\Sms\SmsResponse;
-use RSE\Delivra\Sms\SmsResponseCollection;
 use RSE\Delivra\Traits\SanitizesNumbers;
 
-abstract class SmsDriver
+abstract class SmsDriver implements SmsDriverInterface
 {
     protected string $driver;
 
@@ -99,7 +98,7 @@ abstract class SmsDriver
         //
     }
 
-    public function send(): SmsResponse|SmsBatchResponse|SmsResponseCollection
+    public function send(): SmsResponse|SmsBatchResponse
     {
         $recipients = $this->builder->getRecipients();
 
