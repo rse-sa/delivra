@@ -18,7 +18,7 @@ class UnifonicDriver extends SmsDriver
 
             $array = json_decode($response->body(), true);
 
-            if ($array === false || !isset($array['Balance'])) {
+            if ($array === false || ! isset($array['Balance'])) {
                 throw new ApiErrorException($this->driver, 'BALANCE_ERROR', 'Failed to get balance', $array);
             }
 
@@ -32,7 +32,7 @@ class UnifonicDriver extends SmsDriver
     public function formatNumber(string $number): string
     {
         // Remove '+' and leading '0', prepend '966'
-        return '966'.ltrim(ltrim($number, '+'), '0');
+        return '966' . ltrim(ltrim($number, '+'), '0');
     }
 
     public function sendSingle(string $recipient): SmsResponse
@@ -40,10 +40,10 @@ class UnifonicDriver extends SmsDriver
         $response = new SmsResponse($this->driver, $recipient, $this->builder->getBody());
 
         $params = [
-            'AppSid' => $this->settings['key'],
+            'AppSid'    => $this->settings['key'],
             'Recipient' => $recipient,
-            'Body' => $this->builder->getBody(),
-            'SenderID' => $this->settings['sender'],
+            'Body'      => $this->builder->getBody(),
+            'SenderID'  => $this->settings['sender'],
         ];
 
         try {
@@ -76,7 +76,7 @@ class UnifonicDriver extends SmsDriver
         } catch (\Exception $e) {
             $response->setFailed()->setResponse($e->getMessage());
 
-            if (!$e instanceof ApiErrorException) {
+            if (! $e instanceof ApiErrorException) {
                 report($e);
             }
 
@@ -87,17 +87,17 @@ class UnifonicDriver extends SmsDriver
     public function sendMultiple(array $recipients): SmsBatchResponse
     {
         // Unifonic supports bulk sending
-        $batch = new SmsBatchResponse();
+        $batch   = new SmsBatchResponse;
         $numbers = array_map([$this, 'formatNumber'], $recipients);
 
         try {
             $response = $this->http()->asForm()->post(
                 'https://api.unifonic.com/rest/Messages/SendBulk',
                 [
-                    'AppSid' => $this->settings['key'],
+                    'AppSid'    => $this->settings['key'],
                     'Recipient' => implode(',', $numbers),
-                    'Body' => $this->builder->getBody(),
-                    'SenderID' => $this->settings['sender'],
+                    'Body'      => $this->builder->getBody(),
+                    'SenderID'  => $this->settings['sender'],
                 ]
             );
 
@@ -106,7 +106,7 @@ class UnifonicDriver extends SmsDriver
             // Unifonic bulk API returns individual results per recipient
             if (isset($result['data']) && is_array($result['data'])) {
                 foreach ($result['data'] as $index => $item) {
-                    $recipient = $recipients[$index];
+                    $recipient   = $recipients[$index];
                     $smsResponse = new SmsResponse($this->driver, $recipient, $this->builder->getBody());
 
                     if (($item['status'] ?? 'failed') === 'success') {
@@ -123,6 +123,7 @@ class UnifonicDriver extends SmsDriver
             }
         } catch (\Exception $e) {
             report($e);
+
             // Fallback: send individually
             return parent::sendMultiple($recipients);
         }

@@ -15,19 +15,17 @@ use RSE\Delivra\Telegram\TelegramResponse;
 
 class TelegramChannel
 {
-    public function __construct(protected Telegram $telegram)
-    {
-    }
+    public function __construct(protected Telegram $telegram) {}
 
     public function send($notifiable, Notification $notification)
     {
-        if (!method_exists($notification, 'toTelegram')) {
+        if (! method_exists($notification, 'toTelegram')) {
             throw new Exception('toTelegram method is missing');
         }
 
         $message = $notification->toTelegram($notifiable);
 
-        if (!$message instanceof TelegramMessageAbstract) {
+        if (! $message instanceof TelegramMessageAbstract) {
             throw new Exception('Wrong return format from toTelegram method');
         }
 
@@ -41,18 +39,18 @@ class TelegramChannel
         }
 
         $receivers = $message->getReceivers();
-        $results = [];
+        $results   = [];
 
         foreach ($receivers as $chatId) {
             $singleMessage = clone $message;
             $singleMessage->to([$chatId]);
 
-            $endpoint = $this->telegram->getEndpointForMessage($singleMessage);
-            $payload = $singleMessage->toArray();
+            $endpoint           = $this->telegram->getEndpointForMessage($singleMessage);
+            $payload            = $singleMessage->toArray();
             $payload['chat_id'] = $chatId;
 
             $token = $this->telegram->getTokenForMessage($singleMessage);
-            $body = $this->getMessageBody($singleMessage);
+            $body  = $this->getMessageBody($singleMessage);
 
             $eventResults = event(new DelivraMessageSending('telegram', $chatId, $body, $payload, null, $token, $notifiable, $notification, $singleMessage));
             if (isset($eventResults[0]) && $eventResults[0] === false) {
@@ -68,7 +66,7 @@ class TelegramChannel
 
                 $result = $response->json();
 
-                if (!($result['ok'] ?? false)) {
+                if (! ($result['ok'] ?? false)) {
                     throw new ApiErrorException(
                         $result['error_code'] ?? 'UNKNOWN',
                         $result['description'] ?? 'Unknown error',

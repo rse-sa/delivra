@@ -12,7 +12,7 @@ class FileUploadException extends DelivraException
     {
         $this->filePath = $filePath;
 
-        parent::__construct("Failed to upload file [{$filePath}]".($message ? ": {$message}" : ''));
+        parent::__construct("Failed to upload file [{$filePath}]" . ($message ? ": {$message}" : ''));
     }
 
     public function getFilePath(): string

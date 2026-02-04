@@ -7,14 +7,16 @@ use RSE\Delivra\Exceptions\DelivraException;
 class OutOfBalanceException extends DelivraException
 {
     protected string $driver;
+
     protected ?int $currentBalance;
+
     protected ?int $required;
 
     public function __construct(string $driver, ?int $currentBalance = null, ?int $required = null)
     {
-        $this->driver = $driver;
+        $this->driver         = $driver;
         $this->currentBalance = $currentBalance;
-        $this->required = $required;
+        $this->required       = $required;
 
         $message = "Insufficient balance for driver [{$driver}]";
         if ($currentBalance !== null) {

@@ -105,10 +105,10 @@ class VideoMessage extends TelegramMessageAbstract
     public function toArray(): array
     {
         return [
-            'caption' => $this->caption,
-            'width' => $this->width,
-            'height' => $this->height,
-            'duration' => $this->duration,
+            'caption'   => $this->caption,
+            'width'     => $this->width,
+            'height'    => $this->height,
+            'duration'  => $this->duration,
             'thumbnail' => $this->thumbnail,
         ];
     }
@@ -129,15 +129,15 @@ class VideoMessage extends TelegramMessageAbstract
         }
 
         $response = $request->post("https://api.telegram.org/bot{$this->token}/sendVideo", $this->prepareBasicParameters($this->receivers[0], [
-            'caption' => $this->caption,
-            'width' => $this->width,
-            'height' => $this->height,
+            'caption'  => $this->caption,
+            'width'    => $this->width,
+            'height'   => $this->height,
             'duration' => $this->duration,
         ]));
 
         $result = $response->json();
 
-        if (!($result['ok'] ?? false)) {
+        if (! ($result['ok'] ?? false)) {
             throw new ApiErrorException(
                 $result['error_code'] ?? 'UNKNOWN',
                 $result['description'] ?? 'Unknown error',

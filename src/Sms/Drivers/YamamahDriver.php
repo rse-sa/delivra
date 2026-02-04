@@ -13,11 +13,11 @@ class YamamahDriver extends SmsDriver
     public function getBalance(): ?int
     {
         try {
-            $response = $this->http()->get('https://api.yamamah.com/GetCredit/'.urlencode($this->settings['username']).'/'.urlencode($this->settings['password']))->body();
+            $response = $this->http()->get('https://api.yamamah.com/GetCredit/' . urlencode($this->settings['username']) . '/' . urlencode($this->settings['password']))->body();
 
             $array = json_decode($response, true);
 
-            if ($array === false || !isset($array['GetCreditResult']['Status']) || $array['GetCreditResult']['Status'] != '1') {
+            if ($array === false || ! isset($array['GetCreditResult']['Status']) || $array['GetCreditResult']['Status'] != '1') {
                 throw new ApiErrorException($this->driver, 'BALANCE_ERROR', 'Failed to get balance', $array);
             }
 
@@ -37,7 +37,7 @@ class YamamahDriver extends SmsDriver
     {
         // Yamamah expects international format: 966XXXXXXXXX
         // Remove +, spaces, leading 0
-        return '966'.ltrim(ltrim($number, '+'), '0');
+        return '966' . ltrim(ltrim($number, '+'), '0');
     }
 
     public function sendSingle(string $recipient): SmsResponse
@@ -55,7 +55,7 @@ class YamamahDriver extends SmsDriver
 
             $response->failedIf(
                 $rArray === false
-                || !isset($rArray['Status'])
+                || ! isset($rArray['Status'])
                 || $rArray['Status'] != '1'
             );
 
@@ -75,9 +75,9 @@ class YamamahDriver extends SmsDriver
         } catch (\Exception $e) {
             $response->setFailed()->setResponse($e->getMessage());
 
-            if (!$e instanceof ApiErrorException
-                && !$e instanceof OutOfBalanceException
-                && !$e instanceof InvalidPhoneNumberException
+            if (! $e instanceof ApiErrorException
+                && ! $e instanceof OutOfBalanceException
+                && ! $e instanceof InvalidPhoneNumberException
             ) {
                 report($e);
             }
@@ -89,15 +89,15 @@ class YamamahDriver extends SmsDriver
     protected function payload($recipient): array
     {
         return [
-            'Username' => $this->settings['username'],
-            'Password' => $this->settings['password'],
-            'Tagname' => $this->settings['sender'] ?? '',
+            'Username'        => $this->settings['username'],
+            'Password'        => $this->settings['password'],
+            'Tagname'         => $this->settings['sender'] ?? '',
             'RecepientNumber' => $recipient,
-            'VariableList' => '',
+            'VariableList'    => '',
             'ReplacementList' => '',
-            'Message' => $this->builder->getBody(),
-            'SendDateTime' => 0,
-            'EnableDR' => false,
+            'Message'         => $this->builder->getBody(),
+            'SendDateTime'    => 0,
+            'EnableDR'        => false,
         ];
     }
 }

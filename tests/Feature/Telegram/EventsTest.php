@@ -20,25 +20,27 @@ class EventsTest extends TestCase
 
         Http::fake([
             'api.telegram.org/*' => Http::response([
-                'ok' => true,
+                'ok'     => true,
                 'result' => [
                     'message_id' => 123,
-                    'chat' => ['id' => '123456'],
+                    'chat'       => ['id' => '123456'],
                 ],
             ]),
         ]);
 
         $telegram = new \RSE\Delivra\Telegram\Telegram(['default_token' => 'test-token']);
-        $channel = new TelegramChannel($telegram);
+        $channel  = new TelegramChannel($telegram);
 
-        $notifiable = new class {
+        $notifiable = new class
+        {
             public function routeNotificationFor($driver, $notification = null)
             {
                 return '123456';
             }
         };
 
-        $notification = new class extends Notification {
+        $notification = new class extends Notification
+        {
             public function toTelegram($notifiable)
             {
                 return TextMessage::make()->message('Test message')->token('test-token');
@@ -56,25 +58,27 @@ class EventsTest extends TestCase
 
         Http::fake([
             'api.telegram.org/*' => Http::response([
-                'ok' => true,
+                'ok'     => true,
                 'result' => [
                     'message_id' => 123,
-                    'chat' => ['id' => '123456'],
+                    'chat'       => ['id' => '123456'],
                 ],
             ]),
         ]);
 
         $telegram = new \RSE\Delivra\Telegram\Telegram(['default_token' => 'test-token']);
-        $channel = new TelegramChannel($telegram);
+        $channel  = new TelegramChannel($telegram);
 
-        $notifiable = new class {
+        $notifiable = new class
+        {
             public function routeNotificationFor($driver, $notification = null)
             {
                 return '123456';
             }
         };
 
-        $notification = new class extends Notification {
+        $notification = new class extends Notification
+        {
             public function toTelegram($notifiable)
             {
                 return TextMessage::make()->message('Test message')->token('test-token');
@@ -92,25 +96,27 @@ class EventsTest extends TestCase
 
         Http::fake([
             'api.telegram.org/*' => Http::response([
-                'ok' => true,
+                'ok'     => true,
                 'result' => [
                     'message_id' => 123,
-                    'chat' => ['id' => '123456'],
+                    'chat'       => ['id' => '123456'],
                 ],
             ]),
         ]);
 
         $telegram = new \RSE\Delivra\Telegram\Telegram(['default_token' => 'test-token']);
-        $channel = new TelegramChannel($telegram);
+        $channel  = new TelegramChannel($telegram);
 
-        $notifiable = new class {
+        $notifiable = new class
+        {
             public function routeNotificationFor($driver, $notification = null)
             {
                 return '123456';
             }
         };
 
-        $notification = new class extends Notification {
+        $notification = new class extends Notification
+        {
             public function toTelegram($notifiable)
             {
                 return TextMessage::make()->message('Test message')->token('test-token');
@@ -129,25 +135,27 @@ class EventsTest extends TestCase
 
         Http::fake([
             'api.telegram.org/*' => Http::response([
-                'ok' => true,
+                'ok'     => true,
                 'result' => [
                     'message_id' => 123,
-                    'chat' => ['id' => '123456'],
+                    'chat'       => ['id' => '123456'],
                 ],
             ]),
         ]);
 
         $telegram = new \RSE\Delivra\Telegram\Telegram(['default_token' => 'test-token']);
-        $channel = new TelegramChannel($telegram);
+        $channel  = new TelegramChannel($telegram);
 
-        $notifiable = new class {
+        $notifiable = new class
+        {
             public function routeNotificationFor($driver, $notification = null)
             {
                 return '123456';
             }
         };
 
-        $notification = new class extends Notification {
+        $notification = new class extends Notification
+        {
             public function toTelegram($notifiable)
             {
                 return TextMessage::make()->message('Test message')->token('test-token');
@@ -173,25 +181,27 @@ class EventsTest extends TestCase
 
         Http::fake([
             'api.telegram.org/*' => Http::response([
-                'ok' => true,
+                'ok'     => true,
                 'result' => [
                     'message_id' => 123,
-                    'chat' => ['id' => '123456'],
+                    'chat'       => ['id' => '123456'],
                 ],
             ]),
         ]);
 
         $telegram = new \RSE\Delivra\Telegram\Telegram(['default_token' => 'test-token']);
-        $channel = new TelegramChannel($telegram);
+        $channel  = new TelegramChannel($telegram);
 
-        $notifiable = new class {
+        $notifiable = new class
+        {
             public function routeNotificationFor($driver, $notification = null)
             {
                 return '123456';
             }
         };
 
-        $notification = new class extends Notification {
+        $notification = new class extends Notification
+        {
             public function toTelegram($notifiable)
             {
                 return TextMessage::make()->message('Test message')->token('test-token');
@@ -215,25 +225,27 @@ class EventsTest extends TestCase
 
         Http::fake([
             'api.telegram.org/*' => Http::response([
-                'ok' => true,
+                'ok'     => true,
                 'result' => [
                     'message_id' => 123,
-                    'chat' => ['id' => '123456'],
+                    'chat'       => ['id' => '123456'],
                 ],
             ]),
         ]);
 
         $telegram = new \RSE\Delivra\Telegram\Telegram(['default_token' => 'test-token']);
-        $channel = new TelegramChannel($telegram);
+        $channel  = new TelegramChannel($telegram);
 
-        $notifiable = new class {
+        $notifiable = new class
+        {
             public function routeNotificationFor($driver, $notification = null)
             {
                 return '123456';
             }
         };
 
-        $notification = new class extends Notification {
+        $notification = new class extends Notification
+        {
             public function toTelegram($notifiable)
             {
                 return TextMessage::make()
@@ -255,25 +267,27 @@ class EventsTest extends TestCase
 
         Http::fake([
             'api.telegram.org/*' => Http::response([
-                'ok' => true,
+                'ok'     => true,
                 'result' => [
                     'message_id' => 123,
-                    'chat' => ['id' => '123456'],
+                    'chat'       => ['id' => '123456'],
                 ],
             ]),
         ]);
 
         $telegram = new \RSE\Delivra\Telegram\Telegram(['default_token' => 'test-token']);
-        $channel = new TelegramChannel($telegram);
+        $channel  = new TelegramChannel($telegram);
 
-        $notifiable = new class {
+        $notifiable = new class
+        {
             public function routeNotificationFor($driver, $notification = null)
             {
                 return ['123456', '789012'];
             }
         };
 
-        $notification = new class extends Notification {
+        $notification = new class extends Notification
+        {
             public function toTelegram($notifiable)
             {
                 return TextMessage::make()->message('Test message')->token('test-token');
@@ -295,25 +309,27 @@ class EventsTest extends TestCase
 
         Http::fake([
             'api.telegram.org/*' => Http::response([
-                'ok' => true,
+                'ok'     => true,
                 'result' => [
                     'message_id' => 123,
-                    'chat' => ['id' => '123456'],
+                    'chat'       => ['id' => '123456'],
                 ],
             ]),
         ]);
 
         $telegram = new \RSE\Delivra\Telegram\Telegram(['default_token' => 'test-token']);
-        $channel = new TelegramChannel($telegram);
+        $channel  = new TelegramChannel($telegram);
 
-        $notifiable = new class {
+        $notifiable = new class
+        {
             public function routeNotificationFor($driver, $notification = null)
             {
                 return '123456';
             }
         };
 
-        $notification = new class extends Notification {
+        $notification = new class extends Notification
+        {
             public function toTelegram($notifiable)
             {
                 return TextMessage::make()
@@ -333,35 +349,37 @@ class EventsTest extends TestCase
 
     public function test_sending_event_is_dispatched_before_send(): void
     {
-        $eventDispatched = false;
+        $eventDispatched   = false;
         $capturedRecipient = null;
 
         Event::listen(DelivraMessageSending::class, function ($event) use (&$eventDispatched, &$capturedRecipient) {
-            $eventDispatched = true;
+            $eventDispatched   = true;
             $capturedRecipient = $event->recipient;
         });
 
         Http::fake([
             'api.telegram.org/*' => Http::response([
-                'ok' => true,
+                'ok'     => true,
                 'result' => [
                     'message_id' => 123,
-                    'chat' => ['id' => '123456'],
+                    'chat'       => ['id' => '123456'],
                 ],
             ]),
         ]);
 
         $telegram = new \RSE\Delivra\Telegram\Telegram(['default_token' => 'test-token']);
-        $channel = new TelegramChannel($telegram);
+        $channel  = new TelegramChannel($telegram);
 
-        $notifiable = new class {
+        $notifiable = new class
+        {
             public function routeNotificationFor($driver, $notification = null)
             {
                 return '123456';
             }
         };
 
-        $notification = new class extends Notification {
+        $notification = new class extends Notification
+        {
             public function toTelegram($notifiable)
             {
                 return TextMessage::make()->message('Test message')->token('test-token');
@@ -381,25 +399,27 @@ class EventsTest extends TestCase
 
         Http::fake([
             'api.telegram.org/*' => Http::response([
-                'ok' => true,
+                'ok'     => true,
                 'result' => [
                     'message_id' => 123,
-                    'chat' => ['id' => '123456'],
+                    'chat'       => ['id' => '123456'],
                 ],
             ]),
         ]);
 
         $telegram = new \RSE\Delivra\Telegram\Telegram(['default_token' => 'test-token']);
-        $channel = new TelegramChannel($telegram);
+        $channel  = new TelegramChannel($telegram);
 
-        $notifiable = new class {
+        $notifiable = new class
+        {
             public function routeNotificationFor($driver, $notification = null)
             {
                 return '123456';
             }
         };
 
-        $notification = new class extends Notification {
+        $notification = new class extends Notification
+        {
             public function toTelegram($notifiable)
             {
                 return TextMessage::make()
@@ -422,23 +442,25 @@ class EventsTest extends TestCase
         // Set up error response for all URLs
         Http::fake([
             '*' => Http::response([
-                'ok' => false,
-                'error_code' => 400,
+                'ok'          => false,
+                'error_code'  => 400,
                 'description' => 'Bad Request: chat not found',
             ], 400),
         ]);
 
         $telegram = new \RSE\Delivra\Telegram\Telegram(['default_token' => 'test-token']);
-        $channel = new TelegramChannel($telegram);
+        $channel  = new TelegramChannel($telegram);
 
-        $notifiable = new class {
+        $notifiable = new class
+        {
             public function routeNotificationFor($driver, $notification = null)
             {
                 return 'invalid-chat-id';
             }
         };
 
-        $notification = new class extends Notification {
+        $notification = new class extends Notification
+        {
             public function toTelegram($notifiable)
             {
                 return TextMessage::make()->message('Test message')->token('test-token');

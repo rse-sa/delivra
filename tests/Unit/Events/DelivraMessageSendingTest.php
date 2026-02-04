@@ -11,14 +11,14 @@ class DelivraMessageSendingTest extends TestCase
     public function test_creates_event_with_all_properties(): void
     {
         $message = TextMessage::make()->message('Test message');
-        $event = new DelivraMessageSending(
+        $event   = new DelivraMessageSending(
             'sms',
             '9665000000',
             'Test body',
             ['key' => 'value'],
             'unifonic',
             null,
-            $notifiable = new class {},
+            $notifiable   = new class {},
             $notification = new class {},
             $message,
         );

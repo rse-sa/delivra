@@ -10,7 +10,7 @@ class TelegramResponseTest extends TestCase
     public function test_creates_successful_response(): void
     {
         $apiResponse = [
-            'ok' => true,
+            'ok'     => true,
             'result' => ['message_id' => 123],
         ];
 
@@ -24,7 +24,7 @@ class TelegramResponseTest extends TestCase
     public function test_creates_failed_response(): void
     {
         $apiResponse = [
-            'ok' => false,
+            'ok'          => false,
             'description' => 'Bad request',
         ];
 
@@ -37,7 +37,7 @@ class TelegramResponseTest extends TestCase
     public function test_to_array(): void
     {
         $apiResponse = [
-            'ok' => true,
+            'ok'     => true,
             'result' => ['message_id' => 123],
         ];
 

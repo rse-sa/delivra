@@ -20,15 +20,15 @@ class TelegramResponse
 
     public function __construct(string $chatId, mixed $raw = null)
     {
-        $this->chatId = $chatId;
-        $this->raw = $raw;
+        $this->chatId    = $chatId;
+        $this->raw       = $raw;
         $this->timestamp = Carbon::now();
 
         if (is_array($raw) && isset($raw['ok']) && $raw['ok']) {
             $this->messageId = $raw['result']['message_id'] ?? null;
-        } elseif (is_array($raw) && (!$raw['ok'] ?? false)) {
+        } elseif (is_array($raw) && (! $raw['ok'] ?? false)) {
             $this->successful = false;
-            $this->error = $raw['description'] ?? 'Unknown error';
+            $this->error      = $raw['description'] ?? 'Unknown error';
         }
     }
 
@@ -39,7 +39,7 @@ class TelegramResponse
 
     public function failed(): bool
     {
-        return !$this->successful;
+        return ! $this->successful;
     }
 
     public function getChatId(): string
@@ -70,12 +70,12 @@ class TelegramResponse
     public function toArray(): array
     {
         return [
-            'success' => $this->successful(),
-            'chat_id' => $this->chatId,
+            'success'    => $this->successful(),
+            'chat_id'    => $this->chatId,
             'message_id' => $this->messageId,
-            'timestamp' => $this->timestamp->toIso8601String(),
-            'error' => $this->error,
-            'raw' => $this->raw,
+            'timestamp'  => $this->timestamp->toIso8601String(),
+            'error'      => $this->error,
+            'raw'        => $this->raw,
         ];
     }
 }

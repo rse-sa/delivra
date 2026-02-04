@@ -49,7 +49,7 @@ class PhotoMessage extends TelegramMessageAbstract
     public function toArray(): array
     {
         return [
-            'photo' => $this->photo,
+            'photo'   => $this->photo,
             'caption' => $this->caption,
         ];
     }
@@ -70,7 +70,7 @@ class PhotoMessage extends TelegramMessageAbstract
 
         $result = $response->json();
 
-        if (!($result['ok'] ?? false)) {
+        if (! ($result['ok'] ?? false)) {
             throw new ApiErrorException(
                 $result['error_code'] ?? 'UNKNOWN',
                 $result['description'] ?? 'Unknown error',

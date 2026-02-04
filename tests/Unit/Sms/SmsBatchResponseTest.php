@@ -10,7 +10,7 @@ class SmsBatchResponseTest extends TestCase
 {
     public function test_adds_success(): void
     {
-        $batch = new SmsBatchResponse();
+        $batch    = new SmsBatchResponse;
         $response = new SmsResponse('unifonic', '9665000000', 'Test');
         $response->setSuccessful();
 
@@ -22,7 +22,7 @@ class SmsBatchResponseTest extends TestCase
 
     public function test_adds_failure(): void
     {
-        $batch = new SmsBatchResponse();
+        $batch = new SmsBatchResponse;
 
         $batch->addFailure('9665000000', 'Invalid number');
 
@@ -32,7 +32,7 @@ class SmsBatchResponseTest extends TestCase
 
     public function test_checks_has_failures(): void
     {
-        $batch = new SmsBatchResponse();
+        $batch = new SmsBatchResponse;
 
         $batch->addFailure('9665000000', 'Invalid number');
 
@@ -41,7 +41,7 @@ class SmsBatchResponseTest extends TestCase
 
     public function test_calculates_total_count(): void
     {
-        $batch = new SmsBatchResponse();
+        $batch    = new SmsBatchResponse;
         $response = new SmsResponse('unifonic', '9665000000', 'Test');
         $response->setSuccessful();
 

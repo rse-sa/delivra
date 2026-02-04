@@ -25,7 +25,7 @@ class Sms
     {
         $this->config = $config;
 
-        $this->setBuilder(new SmsBuilder());
+        $this->setBuilder(new SmsBuilder);
 
         $this->via($this->config['default']);
     }
@@ -37,7 +37,7 @@ class Sms
         return $this;
     }
 
-    public function via(string $driver, array $settings = null): self
+    public function via(string $driver, ?array $settings = null): self
     {
         $this->driver = $driver;
 
@@ -136,7 +136,7 @@ class Sms
     protected function getDriverClass($driver): string
     {
         return $this->config['drivers'][$this->driver]['class']
-            ?? '\\RSE\\Delivra\\Sms\\Drivers\\'.ucfirst(strtolower($driver)).'Driver';
+            ?? '\\RSE\\Delivra\\Sms\\Drivers\\' . ucfirst(strtolower($driver)) . 'Driver';
     }
 
     protected function validateDriver(): void
@@ -144,24 +144,24 @@ class Sms
         $class = $this->getDriverClass($this->driver);
 
         // Use cached validation if available
-        if (!isset(self::$validated[$class])) {
+        if (! isset(self::$validated[$class])) {
             // Check driver is selected
             if (empty($this->driver)) {
                 throw new DriverNotFoundException($this->driver ?? '');
             }
 
             // Check driver exists in config
-            if (!isset($this->config['drivers'][$this->driver])) {
+            if (! isset($this->config['drivers'][$this->driver])) {
                 throw new DriverNotFoundException($this->driver);
             }
 
             // Check driver class exists
-            if (!class_exists($class)) {
+            if (! class_exists($class)) {
                 throw new DriverNotFoundException($this->driver);
             }
 
             // Check driver is instance of SmsDriver contract
-            if (!is_subclass_of($class, SmsDriver::class)) {
+            if (! is_subclass_of($class, SmsDriver::class)) {
                 throw new DriverNotFoundException($this->driver);
             }
 

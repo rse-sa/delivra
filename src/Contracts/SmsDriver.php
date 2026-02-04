@@ -25,9 +25,9 @@ abstract class SmsDriver implements SmsDriverInterface
 
     public function __construct(string $driver, array $settings)
     {
-        $this->driver = $driver;
+        $this->driver   = $driver;
         $this->settings = $settings;
-        $this->builder = new SmsBuilder();
+        $this->builder  = new SmsBuilder;
         $this->boot();
     }
 
@@ -50,7 +50,7 @@ abstract class SmsDriver implements SmsDriverInterface
 
     protected function report($message)
     {
-        $message = is_string($message) ? '[SmsError-'.$this->driver.'] '.$message : $message;
+        $message = is_string($message) ? '[SmsError-' . $this->driver . '] ' . $message : $message;
         report($message);
 
         $this->errors[] = $message;
@@ -116,12 +116,12 @@ abstract class SmsDriver implements SmsDriverInterface
         }
 
         // Strategy B: Driver requires individual sending (loop with try/catch)
-        $batch = new SmsBatchResponse();
+        $batch = new SmsBatchResponse;
         foreach ($recipients as $recipient) {
             try {
-                $number = $this->sanitizeNumber($recipient);
+                $number    = $this->sanitizeNumber($recipient);
                 $formatted = $this->formatNumber($number);
-                $response = $this->sendSingle($formatted);
+                $response  = $this->sendSingle($formatted);
                 $batch->addSuccess($recipient, $response);
             } catch (\Throwable $e) {
                 $batch->addFailure($recipient, $e->getMessage());
@@ -137,13 +137,13 @@ abstract class SmsDriver implements SmsDriverInterface
     {
         // Default implementation loops through sendSingle
         // Override this if provider has bulk API
-        $batch = new SmsBatchResponse();
+        $batch = new SmsBatchResponse;
 
         foreach ($recipients as $recipient) {
             try {
-                $number = $this->sanitizeNumber($recipient);
+                $number    = $this->sanitizeNumber($recipient);
                 $formatted = $this->formatNumber($number);
-                $response = $this->sendSingle($formatted);
+                $response  = $this->sendSingle($formatted);
                 $batch->addSuccess($recipient, $response);
             } catch (\Throwable $e) {
                 $batch->addFailure($recipient, $e->getMessage());
@@ -166,7 +166,7 @@ abstract class SmsDriver implements SmsDriverInterface
     {
         $numbers = Arr::wrap($numbers);
 
-        if (method_exists($this, 'credits') && !is_null($credits = $this->credits($numbers, $message))) {
+        if (method_exists($this, 'credits') && ! is_null($credits = $this->credits($numbers, $message))) {
             return $credits;
         }
 

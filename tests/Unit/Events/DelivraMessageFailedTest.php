@@ -12,14 +12,14 @@ class DelivraMessageFailedTest extends TestCase
     public function test_creates_event_with_all_properties(): void
     {
         $exception = new Exception('Something went wrong');
-        $message = TextMessage::make()->message('Test message');
-        $event = new DelivraMessageFailed(
+        $message   = TextMessage::make()->message('Test message');
+        $event     = new DelivraMessageFailed(
             'sms',
             '9665000000',
             'Test body',
             'Failed to send',
             $exception,
-            $notifiable = new class {},
+            $notifiable   = new class {},
             $notification = new class {},
             $message,
         );
@@ -73,7 +73,7 @@ class DelivraMessageFailedTest extends TestCase
     public function test_creates_event_with_message_instance(): void
     {
         $message = TextMessage::make()->message('Test');
-        $event = new DelivraMessageFailed(
+        $event   = new DelivraMessageFailed(
             'telegram',
             '123456',
             'Test',

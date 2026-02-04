@@ -48,7 +48,7 @@ class LocationMessage extends TelegramMessageAbstract
     public function toArray(): array
     {
         return [
-            'latitude' => $this->latitude,
+            'latitude'  => $this->latitude,
             'longitude' => $this->longitude,
         ];
     }
@@ -62,13 +62,13 @@ class LocationMessage extends TelegramMessageAbstract
             ->retry(config('delivra.http.retries', 3), config('delivra.http.retry_delay', 100))
             ->acceptJson()
             ->post("https://api.telegram.org/bot{$this->token}/sendLocation", $this->prepareBasicParameters($this->receivers[0], [
-                'latitude' => $this->latitude,
+                'latitude'  => $this->latitude,
                 'longitude' => $this->longitude,
             ]));
 
         $result = $response->json();
 
-        if (!($result['ok'] ?? false)) {
+        if (! ($result['ok'] ?? false)) {
             throw new ApiErrorException(
                 $result['error_code'] ?? 'UNKNOWN',
                 $result['description'] ?? 'Unknown error',

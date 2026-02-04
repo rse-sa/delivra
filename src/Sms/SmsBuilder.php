@@ -10,7 +10,7 @@ class SmsBuilder
 
     public static function make(): self
     {
-        return new static();
+        return new static;
     }
 
     protected string $body = '';

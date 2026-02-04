@@ -7,12 +7,13 @@ use Countable;
 class TelegramBatchResponse implements Countable
 {
     protected array $successful = [];
+
     protected array $failed = [];
 
     public function addSuccess(string $chatId, TelegramResponse $response): void
     {
         $this->successful[] = [
-            'chatId' => $chatId,
+            'chatId'   => $chatId,
             'response' => $response,
         ];
     }
@@ -21,7 +22,7 @@ class TelegramBatchResponse implements Countable
     {
         $this->failed[] = [
             'chatId' => $chatId,
-            'error' => $error,
+            'error'  => $error,
         ];
     }
 

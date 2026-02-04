@@ -13,7 +13,7 @@ class DelivraServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->mergeConfigFrom(__DIR__.'/../config/delivra.php', 'delivra');
+        $this->mergeConfigFrom(__DIR__ . '/../config/delivra.php', 'delivra');
 
         $this->app->singleton('delivra-sms', function ($app) {
             return new Sms($app->make('config')->get('delivra.sms'));
@@ -28,7 +28,7 @@ class DelivraServiceProvider extends ServiceProvider
     {
         if ($this->app->runningInConsole()) {
             $this->publishes([
-                __DIR__.'/../config/delivra.php' => config_path('delivra.php'),
+                __DIR__ . '/../config/delivra.php' => config_path('delivra.php'),
             ], 'delivra-config');
         }
 

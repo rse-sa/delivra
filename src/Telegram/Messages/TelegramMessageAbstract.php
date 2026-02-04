@@ -21,7 +21,7 @@ abstract class TelegramMessageAbstract
 
     public static function make(): self
     {
-        return new static();
+        return new static;
     }
 
     public function to(string|array $chatIds): self
@@ -97,7 +97,7 @@ abstract class TelegramMessageAbstract
     {
         $this->buttons[] = [
             'text' => $title,
-            'url' => $url,
+            'url'  => $url,
         ];
 
         return $this;
@@ -117,16 +117,16 @@ abstract class TelegramMessageAbstract
         }
 
         if (empty($this->token)) {
-            throw new InvalidTokenException();
+            throw new InvalidTokenException;
         }
     }
 
     protected function prepareBasicParameters(string $chatId, array $extra = []): array
     {
         $params = array_merge([
-            'chat_id' => $chatId,
-            'parse_mode' => $this->parseMode,
-            'protect_content' => $this->protectContent,
+            'chat_id'              => $chatId,
+            'parse_mode'           => $this->parseMode,
+            'protect_content'      => $this->protectContent,
             'disable_notification' => $this->silently,
         ], $extra);
 

@@ -137,16 +137,16 @@ class PollMessage extends TelegramMessageAbstract
     public function toArray(): array
     {
         return [
-            'question' => $this->question,
-            'options' => json_encode($this->options),
-            'is_anonymous' => $this->anonymous,
-            'type' => $this->type,
+            'question'                => $this->question,
+            'options'                 => json_encode($this->options),
+            'is_anonymous'            => $this->anonymous,
+            'type'                    => $this->type,
             'allows_multiple_answers' => $this->multipleAnswers,
-            'correct_option_id' => $this->correctOptionId,
-            'explanation' => $this->explanation,
-            'explanation_parse_mode' => $this->explanation ? $this->parseMode : null,
-            'open_period' => $this->openPeriod,
-            'close_date' => $this->closeDate ? $this->closeDate->unix() : null,
+            'correct_option_id'       => $this->correctOptionId,
+            'explanation'             => $this->explanation,
+            'explanation_parse_mode'  => $this->explanation ? $this->parseMode : null,
+            'open_period'             => $this->openPeriod,
+            'close_date'              => $this->closeDate ? $this->closeDate->unix() : null,
         ];
     }
 
@@ -159,21 +159,21 @@ class PollMessage extends TelegramMessageAbstract
             ->retry(config('delivra.http.retries', 3), config('delivra.http.retry_delay', 100))
             ->acceptJson()
             ->post("https://api.telegram.org/bot{$this->token}/sendPoll", $this->prepareBasicParameters($this->receivers[0], [
-                'question' => $this->question,
-                'options' => json_encode($this->options),
-                'is_anonymous' => $this->anonymous,
-                'type' => $this->type,
+                'question'                => $this->question,
+                'options'                 => json_encode($this->options),
+                'is_anonymous'            => $this->anonymous,
+                'type'                    => $this->type,
                 'allows_multiple_answers' => $this->multipleAnswers,
-                'correct_option_id' => $this->correctOptionId,
-                'explanation' => $this->explanation,
-                'explanation_parse_mode' => $this->explanation ? $this->parseMode : null,
-                'open_period' => $this->openPeriod,
-                'close_date' => $this->closeDate ? $this->closeDate->unix() : null,
+                'correct_option_id'       => $this->correctOptionId,
+                'explanation'             => $this->explanation,
+                'explanation_parse_mode'  => $this->explanation ? $this->parseMode : null,
+                'open_period'             => $this->openPeriod,
+                'close_date'              => $this->closeDate ? $this->closeDate->unix() : null,
             ]));
 
         $result = $response->json();
 
-        if (!($result['ok'] ?? false)) {
+        if (! ($result['ok'] ?? false)) {
             throw new ApiErrorException(
                 $result['error_code'] ?? 'UNKNOWN',
                 $result['description'] ?? 'Unknown error',

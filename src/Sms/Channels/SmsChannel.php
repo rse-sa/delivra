@@ -12,19 +12,17 @@ use RSE\Delivra\Sms\SmsBuilder;
 
 class SmsChannel
 {
-    public function __construct(protected Sms $sms)
-    {
-    }
+    public function __construct(protected Sms $sms) {}
 
     public function send($notifiable, Notification $notification)
     {
-        if (!method_exists($notification, 'toSms')) {
+        if (! method_exists($notification, 'toSms')) {
             return false;
         }
 
         $message = $notification->toSms($notifiable);
 
-        if (!$message instanceof SmsBuilder) {
+        if (! $message instanceof SmsBuilder) {
             return false;
         }
 
@@ -38,20 +36,20 @@ class SmsChannel
 
         $this->validate($message);
 
-        if (!empty($message->getDriver())) {
+        if (! empty($message->getDriver())) {
             $this->sms->via($message->getDriver());
         }
 
         $recipients = $message->getRecipients();
-        $driver = $message->getDriver() ?: $this->sms->getDriver();
-        $body = $message->getBody();
-        $results = [];
+        $driver     = $message->getDriver() ?: $this->sms->getDriver();
+        $body       = $message->getBody();
+        $results    = [];
 
         foreach ($recipients as $recipient) {
             $payload = [
                 'recipient' => $recipient,
-                'body' => $body,
-                'driver' => $driver,
+                'body'      => $body,
+                'driver'    => $driver,
             ];
 
             $eventResults = event(new DelivraMessageSending('sms', $recipient, $body, $payload, $driver, null, $notifiable, $notification));
@@ -79,8 +77,8 @@ class SmsChannel
     private function validate($message): void
     {
         $conditions = [
-            'Invalid data for sms notification.' => !$message instanceof SmsBuilder,
-            'Message body could not be empty.' => empty($message->getBody()),
+            'Invalid data for sms notification.' => ! $message instanceof SmsBuilder,
+            'Message body could not be empty.'   => empty($message->getBody()),
         ];
 
         foreach ($conditions as $ex => $condition) {

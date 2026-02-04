@@ -7,12 +7,13 @@ use Countable;
 class SmsBatchResponse implements Countable
 {
     protected array $successful = [];
+
     protected array $failed = [];
 
     public function addSuccess(string $recipient, SmsResponse $response): void
     {
         $this->successful[] = [
-            'number' => $recipient,
+            'number'   => $recipient,
             'response' => $response,
         ];
     }
@@ -21,7 +22,7 @@ class SmsBatchResponse implements Countable
     {
         $this->failed[] = [
             'number' => $recipient,
-            'error' => $error,
+            'error'  => $error,
         ];
     }
 

@@ -15,8 +15,8 @@ class MsegatDriver extends SmsDriver
     {
         try {
             $response = $this->http()->asForm()->post('https://www.msegat.com/gw/Credits.php', [
-                'userName' => $this->settings['username'],
-                'apiKey' => $this->settings['key'],
+                'userName'    => $this->settings['username'],
+                'apiKey'      => $this->settings['key'],
                 'msgEncoding' => 'UTF8',
             ])->body();
 
@@ -40,7 +40,7 @@ class MsegatDriver extends SmsDriver
     {
         // Msegat expects numbers with country code, no + or spaces
         // Example: 9665000000000
-        return '966'.ltrim(ltrim($number, '+'), '0');
+        return '966' . ltrim(ltrim($number, '+'), '0');
     }
 
     public function credits($numbers, string $message): ?float
@@ -49,11 +49,11 @@ class MsegatDriver extends SmsDriver
 
         try {
             $response = $this->http()->asForm()->post('https://www.msegat.com/gw/calculateCost.php', [
-                'userName' => $this->settings['username'],
-                'apiKey' => $this->settings['key'],
+                'userName'    => $this->settings['username'],
+                'apiKey'      => $this->settings['key'],
                 'contactType' => 'numbers',
-                'contacts' => implode(',', $numbers),
-                'msg' => $message,
+                'contacts'    => implode(',', $numbers),
+                'msg'         => $message,
                 'msgEncoding' => 'UTF8',
             ])->body();
 
@@ -75,11 +75,11 @@ class MsegatDriver extends SmsDriver
 
         try {
             $apiResponse = $this->http()->asJson()->post('https://www.msegat.com/gw/sendsms.php', [
-                'userName' => $this->settings['username'],
-                'apiKey' => $this->settings['key'],
-                'numbers' => $recipient,
-                'userSender' => $this->settings['sender'],
-                'msg' => $this->builder->getBody(),
+                'userName'    => $this->settings['username'],
+                'apiKey'      => $this->settings['key'],
+                'numbers'     => $recipient,
+                'userSender'  => $this->settings['sender'],
+                'msg'         => $this->builder->getBody(),
                 'msgEncoding' => 'UTF8',
             ]);
 
@@ -89,7 +89,7 @@ class MsegatDriver extends SmsDriver
 
             $response->failedIf(
                 $rArray === false
-                || !isset($rArray['code'])
+                || ! isset($rArray['code'])
                 || ($rArray['code'] != '1' && $rArray['code'] != 'M0000')
             );
 
@@ -107,9 +107,9 @@ class MsegatDriver extends SmsDriver
         } catch (\Exception $e) {
             $response->setFailed()->setResponse($e->getMessage());
 
-            if (!$e instanceof ApiErrorException
-                && !$e instanceof OutOfBalanceException
-                && !$e instanceof InvalidPhoneNumberException
+            if (! $e instanceof ApiErrorException
+                && ! $e instanceof OutOfBalanceException
+                && ! $e instanceof InvalidPhoneNumberException
             ) {
                 report($e);
             }

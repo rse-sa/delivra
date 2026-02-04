@@ -16,7 +16,7 @@ class ShamelsmsDriver extends SmsDriver
         try {
             $response = $this->http()->get('https://www.shamelsms.net/api/users.aspx', [
                 'query' => [
-                    'code' => 7,
+                    'code'     => 7,
                     'username' => $this->settings['username'],
                     'password' => $this->settings['password'],
                 ],
@@ -41,7 +41,7 @@ class ShamelsmsDriver extends SmsDriver
     public function formatNumber(string $number): string
     {
         // Shamelsms expects international format: 966XXXXXXXXX
-        return '966'.ltrim(ltrim($number, '+'), '0');
+        return '966' . ltrim(ltrim($number, '+'), '0');
     }
 
     public function sendSingle(string $recipient): SmsResponse
@@ -51,11 +51,11 @@ class ShamelsmsDriver extends SmsDriver
         try {
             $apiResponse = $this->http()->get('https://www.shamelsms.net/api/httpSms.aspx', [
                 'query' => [
-                    'username' => $this->settings['username'],
-                    'password' => $this->settings['password'],
-                    'mobile' => $recipient,
-                    'message' => $this->builder->getBody(),
-                    'sender' => $this->settings['sender'],
+                    'username'    => $this->settings['username'],
+                    'password'    => $this->settings['password'],
+                    'mobile'      => $recipient,
+                    'message'     => $this->builder->getBody(),
+                    'sender'      => $this->settings['sender'],
                     'unicodetype' => 'U',
                 ],
             ]);
@@ -80,9 +80,9 @@ class ShamelsmsDriver extends SmsDriver
         } catch (\Exception $e) {
             $response->setFailed()->setResponse($e->getMessage());
 
-            if (!$e instanceof ApiErrorException
-                && !$e instanceof OutOfBalanceException
-                && !$e instanceof InvalidPhoneNumberException
+            if (! $e instanceof ApiErrorException
+                && ! $e instanceof OutOfBalanceException
+                && ! $e instanceof InvalidPhoneNumberException
             ) {
                 report($e);
             }

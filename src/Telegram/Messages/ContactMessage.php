@@ -77,9 +77,9 @@ class ContactMessage extends TelegramMessageAbstract
     {
         return [
             'phone_number' => $this->phoneNumber,
-            'first_name' => $this->firstName,
-            'last_name' => $this->lastName,
-            'vcard' => $this->vCard,
+            'first_name'   => $this->firstName,
+            'last_name'    => $this->lastName,
+            'vcard'        => $this->vCard,
         ];
     }
 
@@ -93,14 +93,14 @@ class ContactMessage extends TelegramMessageAbstract
             ->acceptJson()
             ->post("https://api.telegram.org/bot{$this->token}/sendContact", $this->prepareBasicParameters($this->receivers[0], [
                 'phone_number' => $this->phoneNumber,
-                'first_name' => $this->firstName,
-                'last_name' => $this->lastName,
-                'vcard' => $this->vCard,
+                'first_name'   => $this->firstName,
+                'last_name'    => $this->lastName,
+                'vcard'        => $this->vCard,
             ]));
 
         $result = $response->json();
 
-        if (!($result['ok'] ?? false)) {
+        if (! ($result['ok'] ?? false)) {
             throw new ApiErrorException(
                 $result['error_code'] ?? 'UNKNOWN',
                 $result['description'] ?? 'Unknown error',

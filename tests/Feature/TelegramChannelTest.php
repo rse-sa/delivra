@@ -13,16 +13,18 @@ class TelegramChannelTest extends TestCase
     public function test_sends_notification(): void
     {
         $telegram = new Telegram(['default_token' => 'test-token']);
-        $channel = new TelegramChannel($telegram);
+        $channel  = new TelegramChannel($telegram);
 
-        $notifiable = new class {
+        $notifiable = new class
+        {
             public function routeNotificationFor($driver, $notification = null)
             {
                 return '123456';
             }
         };
 
-        $notification = new class extends Notification {
+        $notification = new class extends Notification
+        {
             public function toTelegram($notifiable)
             {
                 return TextMessage::make()->message('Test message')->token('test-token');
@@ -37,19 +39,22 @@ class TelegramChannelTest extends TestCase
     public function test_uses_notifiable_chat_id(): void
     {
         $telegram = new Telegram(['default_token' => 'test-token']);
-        $channel = new TelegramChannel($telegram);
+        $channel  = new TelegramChannel($telegram);
 
-        $notifiable = new class {
+        $notifiable = new class
+        {
             public function routeNotificationFor($driver, $notification = null)
             {
                 return '789012';
             }
         };
 
-        $notification = new class extends Notification {
+        $notification = new class extends Notification
+        {
             public function toTelegram($notifiable)
             {
                 $message = TextMessage::make()->message('Test message')->token('test-token');
+
                 // Chat ID should be set from notifiable
                 return $message;
             }

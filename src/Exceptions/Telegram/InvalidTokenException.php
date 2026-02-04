@@ -12,7 +12,7 @@ class InvalidTokenException extends DelivraException
     {
         $this->token = $token;
 
-        parent::__construct('Invalid Telegram bot token'.($token ? " [{$token}]" : ''));
+        parent::__construct('Invalid Telegram bot token' . ($token ? " [{$token}]" : ''));
     }
 
     public function getToken(): ?string

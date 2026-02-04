@@ -9,7 +9,7 @@ class SmsBuilderTest extends TestCase
 {
     public function test_sets_recipient(): void
     {
-        $builder = new SmsBuilder();
+        $builder = new SmsBuilder;
         $builder->to('9665000000');
 
         $this->assertEquals(['9665000000'], $builder->getRecipients());
@@ -17,7 +17,7 @@ class SmsBuilderTest extends TestCase
 
     public function test_sets_multiple_recipients(): void
     {
-        $builder = new SmsBuilder();
+        $builder = new SmsBuilder;
         $builder->to(['9665000000', '9666000000']);
 
         $this->assertEquals(['9665000000', '9666000000'], $builder->getRecipients());
@@ -25,7 +25,7 @@ class SmsBuilderTest extends TestCase
 
     public function test_sets_message_body(): void
     {
-        $builder = new SmsBuilder();
+        $builder = new SmsBuilder;
         $builder->body('Test message');
 
         $this->assertEquals('Test message', $builder->getBody());
@@ -33,7 +33,7 @@ class SmsBuilderTest extends TestCase
 
     public function test_sets_driver(): void
     {
-        $builder = new SmsBuilder();
+        $builder = new SmsBuilder;
         $builder->via('unifonic');
 
         $this->assertEquals('unifonic', $builder->getDriver());
@@ -41,7 +41,7 @@ class SmsBuilderTest extends TestCase
 
     public function test_enables_credits(): void
     {
-        $builder = new SmsBuilder();
+        $builder = new SmsBuilder;
         $builder->withCredits(true);
 
         $this->assertTrue($builder->shouldIncludeCredits());
@@ -49,7 +49,7 @@ class SmsBuilderTest extends TestCase
 
     public function test_disables_credits(): void
     {
-        $builder = new SmsBuilder();
+        $builder = new SmsBuilder;
         $builder->withCredits(false);
 
         $this->assertFalse($builder->shouldIncludeCredits());
@@ -57,7 +57,7 @@ class SmsBuilderTest extends TestCase
 
     public function test_without_credits(): void
     {
-        $builder = new SmsBuilder();
+        $builder = new SmsBuilder;
         $builder->withoutCredits();
 
         $this->assertFalse($builder->shouldIncludeCredits());

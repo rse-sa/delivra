@@ -31,10 +31,10 @@ class Telegram
 
     public function __construct(array $config)
     {
-        $this->config = $config;
-        $this->defaultToken = $config['default_token'] ?? null;
+        $this->config        = $config;
+        $this->defaultToken  = $config['default_token'] ?? null;
         $this->defaultChatId = $config['default_chat_id'] ?? null;
-        $this->parseMode = $config['parse_mode'] ?? 'html';
+        $this->parseMode     = $config['parse_mode'] ?? 'html';
     }
 
     public function text(string $message): TextMessage
@@ -143,12 +143,12 @@ class Telegram
 
     protected function sendMessageToSingle($message, string $chatId): TelegramResponse
     {
-        $endpoint = $this->getEndpointForMessage($message);
-        $payload = $message->toArray();
+        $endpoint           = $this->getEndpointForMessage($message);
+        $payload            = $message->toArray();
         $payload['chat_id'] = $chatId;
 
         $token = $this->getTokenForMessage($message);
-        $body = $this->getMessageBody($message);
+        $body  = $this->getMessageBody($message);
 
         event(new DelivraMessageSending('telegram', $chatId, $body, $payload, null, $token, null, null, $message));
 
@@ -161,7 +161,7 @@ class Telegram
 
             $result = $response->json();
 
-            if (!($result['ok'] ?? false)) {
+            if (! ($result['ok'] ?? false)) {
                 throw new ApiErrorException(
                     $result['error_code'] ?? 'UNKNOWN',
                     $result['description'] ?? 'Unknown error',
@@ -176,7 +176,7 @@ class Telegram
         } catch (\Throwable $e) {
             event(new DelivraMessageFailed('telegram', $chatId, $body, $e->getMessage(), $e, null, null, $message));
 
-            if (!$e instanceof ApiErrorException) {
+            if (! $e instanceof ApiErrorException) {
                 report($e);
             }
 
@@ -186,13 +186,13 @@ class Telegram
 
     protected function sendMessageToMultiple($message, array $chatIds): TelegramBatchResponse
     {
-        $batch = new TelegramBatchResponse();
+        $batch    = new TelegramBatchResponse;
         $endpoint = $this->getEndpointForMessage($message);
-        $token = $this->getTokenForMessage($message);
-        $body = $this->getMessageBody($message);
+        $token    = $this->getTokenForMessage($message);
+        $body     = $this->getMessageBody($message);
 
         foreach ($chatIds as $chatId) {
-            $payload = $message->toArray();
+            $payload            = $message->toArray();
             $payload['chat_id'] = $chatId;
 
             event(new DelivraMessageSending('telegram', $chatId, $body, $payload, null, $token, null, null, $message));
@@ -206,7 +206,7 @@ class Telegram
 
                 $result = $response->json();
 
-                if (!($result['ok'] ?? false)) {
+                if (! ($result['ok'] ?? false)) {
                     $error = $result['description'] ?? 'Unknown error';
                     event(new DelivraMessageFailed('telegram', $chatId, $body, $error, null, null, null, $message));
                     $batch->addFailure($chatId, $error);
@@ -236,14 +236,14 @@ class Telegram
         $class = get_class($message);
 
         return match (true) {
-            $class === TextMessage::class => 'sendMessage',
-            $class === PhotoMessage::class => 'sendPhoto',
-            $class === VideoMessage::class => 'sendVideo',
+            $class === TextMessage::class     => 'sendMessage',
+            $class === PhotoMessage::class    => 'sendPhoto',
+            $class === VideoMessage::class    => 'sendVideo',
             $class === DocumentMessage::class => 'sendDocument',
-            $class === PollMessage::class => 'sendPoll',
+            $class === PollMessage::class     => 'sendPoll',
             $class === LocationMessage::class => 'sendLocation',
-            $class === ContactMessage::class => 'sendContact',
-            default => throw new TelegramMessageFailedException(null, $class, 'Unknown message type'),
+            $class === ContactMessage::class  => 'sendContact',
+            default                           => throw new TelegramMessageFailedException(null, $class, 'Unknown message type'),
         };
     }
 

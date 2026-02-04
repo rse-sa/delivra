@@ -13,14 +13,16 @@ class SmsChannelTest extends TestCase
     {
         $channel = new SmsChannel(app('delivra-sms'));
 
-        $notifiable = new class {
+        $notifiable = new class
+        {
             public function routeNotificationFor($driver, $notification = null)
             {
                 return '9665000000';
             }
         };
 
-        $notification = new class extends Notification {
+        $notification = new class extends Notification
+        {
             public function toSms($notifiable)
             {
                 return SmsBuilder::make()->body('Test message');
@@ -36,14 +38,16 @@ class SmsChannelTest extends TestCase
     {
         $channel = new SmsChannel(app('delivra-sms'));
 
-        $notifiable = new class {
+        $notifiable = new class
+        {
             public function routeNotificationFor($driver, $notification = null)
             {
                 return '9665999999';
             }
         };
 
-        $notification = new class extends Notification {
+        $notification = new class extends Notification
+        {
             public function toSms($notifiable)
             {
                 return SmsBuilder::make()->body('Test message');

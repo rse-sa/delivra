@@ -7,6 +7,7 @@ use RSE\Delivra\Exceptions\DelivraException;
 class InvalidPhoneNumberException extends DelivraException
 {
     protected string $number;
+
     protected ?string $driver;
 
     public function __construct(string $number, ?string $driver = null)

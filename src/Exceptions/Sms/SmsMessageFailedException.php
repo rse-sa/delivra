@@ -7,14 +7,16 @@ use RSE\Delivra\Exceptions\DelivraException;
 class SmsMessageFailedException extends DelivraException
 {
     protected string $driver;
+
     protected ?string $recipient;
+
     protected $message;
 
     public function __construct(string $driver, ?string $recipient = null, ?string $message = null)
     {
-        $this->driver = $driver;
+        $this->driver    = $driver;
         $this->recipient = $recipient;
-        $this->message = $message;
+        $this->message   = $message;
 
         parent::__construct("SMS message failed using driver [{$driver}]" .
             ($recipient ? " for recipient [{$recipient}]" : '') .

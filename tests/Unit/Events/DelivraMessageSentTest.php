@@ -13,14 +13,14 @@ class DelivraMessageSentTest extends TestCase
     public function test_creates_event_with_all_properties(): void
     {
         $response = new SmsResponse('unifonic', '9665000000', 'Test message');
-        $message = TextMessage::make()->message('Test message');
-        $event = new DelivraMessageSent(
+        $message  = TextMessage::make()->message('Test message');
+        $event    = new DelivraMessageSent(
             'sms',
             '9665000000',
             'Test body',
             'msg-123',
             $response,
-            $notifiable = new class {},
+            $notifiable   = new class {},
             $notification = new class {},
             $message,
         );
@@ -38,7 +38,7 @@ class DelivraMessageSentTest extends TestCase
     public function test_creates_minimal_event(): void
     {
         $response = new SmsResponse('unifonic', '9665000000', 'Test message');
-        $event = new DelivraMessageSent(
+        $event    = new DelivraMessageSent(
             'telegram',
             '123456',
             'Test body',
@@ -59,7 +59,7 @@ class DelivraMessageSentTest extends TestCase
     public function test_creates_event_with_null_message_id(): void
     {
         $response = new SmsResponse('null', '9665000000', 'Test message');
-        $event = new DelivraMessageSent(
+        $event    = new DelivraMessageSent(
             'sms',
             '9665000000',
             'Test body',
@@ -73,7 +73,7 @@ class DelivraMessageSentTest extends TestCase
     public function test_creates_event_with_telegram_response(): void
     {
         $telegramResponse = new TelegramResponse('123456', [
-            'ok' => true,
+            'ok'     => true,
             'result' => ['message_id' => 789],
         ]);
 

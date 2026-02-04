@@ -19,14 +19,16 @@ class EventsTest extends TestCase
 
         $channel = new SmsChannel(app('delivra-sms'));
 
-        $notifiable = new class {
+        $notifiable = new class
+        {
             public function routeNotificationFor($driver, $notification = null)
             {
                 return '9665000000';
             }
         };
 
-        $notification = new class extends Notification {
+        $notification = new class extends Notification
+        {
             public function toSms($notifiable)
             {
                 return SmsBuilder::make()->body('Test message');
@@ -48,14 +50,16 @@ class EventsTest extends TestCase
 
         $channel = new SmsChannel(app('delivra-sms'));
 
-        $notifiable = new class {
+        $notifiable = new class
+        {
             public function routeNotificationFor($driver, $notification = null)
             {
                 return '9665000000';
             }
         };
 
-        $notification = new class extends Notification {
+        $notification = new class extends Notification
+        {
             public function toSms($notifiable)
             {
                 return SmsBuilder::make()->body('Test message');
@@ -78,14 +82,16 @@ class EventsTest extends TestCase
 
         $channel = new SmsChannel(app('delivra-sms'));
 
-        $notifiable = new class {
+        $notifiable = new class
+        {
             public function routeNotificationFor($driver, $notification = null)
             {
                 return '9665000000';
             }
         };
 
-        $notification = new class extends Notification {
+        $notification = new class extends Notification
+        {
             public function toSms($notifiable)
             {
                 return SmsBuilder::make()->body('Test message');
@@ -104,14 +110,16 @@ class EventsTest extends TestCase
 
         $channel = new SmsChannel(app('delivra-sms'));
 
-        $notifiable = new class {
+        $notifiable = new class
+        {
             public function routeNotificationFor($driver, $notification = null)
             {
                 return '9665000000';
             }
         };
 
-        $notification = new class extends Notification {
+        $notification = new class extends Notification
+        {
             public function toSms($notifiable)
             {
                 return SmsBuilder::make()->body('Test message');
@@ -137,14 +145,16 @@ class EventsTest extends TestCase
 
         $channel = new SmsChannel(app('delivra-sms'));
 
-        $notifiable = new class {
+        $notifiable = new class
+        {
             public function routeNotificationFor($driver, $notification = null)
             {
                 return ['9665000000', '9665111111'];
             }
         };
 
-        $notification = new class extends Notification {
+        $notification = new class extends Notification
+        {
             public function toSms($notifiable)
             {
                 return SmsBuilder::make()->body('Test message');
@@ -166,14 +176,16 @@ class EventsTest extends TestCase
 
         $channel = new SmsChannel(app('delivra-sms'));
 
-        $notifiable = new class {
+        $notifiable = new class
+        {
             public function routeNotificationFor($driver, $notification = null)
             {
                 return '9665000000';
             }
         };
 
-        $notification = new class extends Notification {
+        $notification = new class extends Notification
+        {
             public function toSms($notifiable)
             {
                 return SmsBuilder::make()->body('Test message')->via('null');
@@ -195,14 +207,16 @@ class EventsTest extends TestCase
 
         $channel = new SmsChannel(app('delivra-sms'));
 
-        $notifiable = new class {
+        $notifiable = new class
+        {
             public function routeNotificationFor($driver, $notification = null)
             {
                 return '9665000000';
             }
         };
 
-        $notification = new class extends Notification {
+        $notification = new class extends Notification
+        {
             public function toSms($notifiable)
             {
                 return SmsBuilder::make()->body('Test message')->via('null');
@@ -222,25 +236,27 @@ class EventsTest extends TestCase
 
     public function test_sending_event_is_dispatched_before_send(): void
     {
-        $eventDispatched = false;
+        $eventDispatched   = false;
         $capturedRecipient = null;
 
         // Register a listener to capture the event
         Event::listen(DelivraMessageSending::class, function ($event) use (&$eventDispatched, &$capturedRecipient) {
-            $eventDispatched = true;
+            $eventDispatched   = true;
             $capturedRecipient = $event->recipient;
         });
 
         $channel = new SmsChannel(app('delivra-sms'));
 
-        $notifiable = new class {
+        $notifiable = new class
+        {
             public function routeNotificationFor($driver, $notification = null)
             {
                 return '9665000000';
             }
         };
 
-        $notification = new class extends Notification {
+        $notification = new class extends Notification
+        {
             public function toSms($notifiable)
             {
                 return SmsBuilder::make()->body('Test message');
@@ -260,14 +276,16 @@ class EventsTest extends TestCase
 
         $channel = new SmsChannel(app('delivra-sms'));
 
-        $notifiable = new class {
+        $notifiable = new class
+        {
             public function routeNotificationFor($driver, $notification = null)
             {
                 return '9665000000';
             }
         };
 
-        $notification = new class extends Notification {
+        $notification = new class extends Notification
+        {
             public function toSms($notifiable)
             {
                 return SmsBuilder::make()->body('Test message body')->via('msegat');

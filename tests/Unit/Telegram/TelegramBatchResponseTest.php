@@ -10,7 +10,7 @@ class TelegramBatchResponseTest extends TestCase
 {
     public function test_adds_success(): void
     {
-        $batch = new TelegramBatchResponse();
+        $batch    = new TelegramBatchResponse;
         $response = new TelegramResponse('chat-1', ['ok' => true, 'result' => ['message_id' => 1]]);
 
         $batch->addSuccess('chat-1', $response);
@@ -21,7 +21,7 @@ class TelegramBatchResponseTest extends TestCase
 
     public function test_adds_failure(): void
     {
-        $batch = new TelegramBatchResponse();
+        $batch = new TelegramBatchResponse;
 
         $batch->addFailure('chat-2', 'Invalid chat ID');
 
@@ -31,7 +31,7 @@ class TelegramBatchResponseTest extends TestCase
 
     public function test_checks_has_failures(): void
     {
-        $batch = new TelegramBatchResponse();
+        $batch = new TelegramBatchResponse;
 
         $batch->addFailure('chat-2', 'Invalid chat ID');
 
@@ -40,7 +40,7 @@ class TelegramBatchResponseTest extends TestCase
 
     public function test_calculates_total_count(): void
     {
-        $batch = new TelegramBatchResponse();
+        $batch    = new TelegramBatchResponse;
         $response = new TelegramResponse('chat-1', ['ok' => true, 'result' => ['message_id' => 1]]);
 
         $batch->addSuccess('chat-1', $response);

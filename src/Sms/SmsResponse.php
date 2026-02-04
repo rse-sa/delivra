@@ -22,9 +22,9 @@ class SmsResponse
 
     public function __construct($driver, $recipient, $body)
     {
-        $this->driver = $driver;
+        $this->driver    = $driver;
         $this->recipient = $recipient;
-        $this->body = $body;
+        $this->body      = $body;
     }
 
     public function getDriver(): string
@@ -82,7 +82,7 @@ class SmsResponse
 
     public function failedIf(bool $condition): self
     {
-        $this->successful = !$condition;
+        $this->successful = ! $condition;
 
         return $this;
     }
@@ -94,7 +94,7 @@ class SmsResponse
 
     public function failed(): bool
     {
-        return !$this->successful;
+        return ! $this->successful;
     }
 
     public function setResponseAsError(): self
@@ -126,11 +126,11 @@ class SmsResponse
     public function toArray(): array
     {
         return [
-            'driver' => $this->driver,
+            'driver'    => $this->driver,
             'recipient' => $this->recipient ?? '',
-            'body' => $this->body ?? '',
-            'status' => $this->successful() ? 'success' : 'failure',
-            'response' => $this->response,
+            'body'      => $this->body ?? '',
+            'status'    => $this->successful() ? 'success' : 'failure',
+            'response'  => $this->response,
         ];
     }
 }

@@ -71,7 +71,7 @@ class TextMessage extends TelegramMessageAbstract
         }
 
         if ($this->title) {
-            $message = '<strong>'.$this->title."</strong>\r\n".$message;
+            $message = '<strong>' . $this->title . "</strong>\r\n" . $message;
         }
 
         return $message;
