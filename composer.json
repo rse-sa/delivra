@@ -1,0 +1,49 @@
+{
+    "name": "rse-sa/delivra",
+    "description": "Easy Notifications Delivery",
+    "license": "MIT",
+    "type": "library",
+    "keywords": ["laravel", "sms", "telegram", "notifications"],
+    "version": "1.0.0",
+    "authors": [
+        {
+            "name": "Muhannad A",
+            "email": "malhussain@rse.sa"
+        }
+    ],
+    "require": {
+        "php": "^8.0",
+        "illuminate/support": "^8.0|^9.0|^10.0|^11.0",
+        "illuminate/http": "^8.0|^9.0|^10.0|^11.0",
+        "illuminate/notifications": "^8.0|^9.0|^10.0|^11.0",
+        "guzzlehttp/guzzle": "^7.0",
+        "nesbot/carbon": "^2.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.0|^10.0",
+        "mockery/mockery": "^1.2",
+        "orchestra/testbench": "^6.0|^7.0|^8.0|^9.0"
+    },
+    "autoload": {
+        "files": [
+            "src/Helpers.php"
+        ],
+        "psr-4": {
+            "RSE\\Delivra\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "RSE\\Delivra\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "RSE\\Delivra\\DelivraServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
