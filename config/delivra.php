@@ -48,6 +48,64 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | WhatsApp Configuration (Meta Cloud API)
+    |--------------------------------------------------------------------------
+    |
+    | Each account is one WhatsApp Business Account (WABA) with its own token
+    | and any number of phone numbers (name => phone_number_id).
+    */
+
+    'whatsapp' => [
+        'default'       => env('DELIVRA_WHATSAPP_ACCOUNT', 'default'),
+        'graph_url'     => env('DELIVRA_WHATSAPP_GRAPH_URL', 'https://graph.facebook.com'),
+        'graph_version' => env('DELIVRA_WHATSAPP_GRAPH_VERSION', 'v24.0'),
+
+        // Prefix for local numbers starting with 0, e.g. "966" turns 0501234567 into 966501234567.
+        'default_country_code' => env('DELIVRA_WHATSAPP_COUNTRY_CODE'),
+
+        'default_language' => env('DELIVRA_WHATSAPP_LANGUAGE', 'en_US'),
+
+        'accounts' => [
+            'default' => [
+                'token'               => env('DELIVRA_WHATSAPP_TOKEN'),
+                'business_account_id' => env('DELIVRA_WHATSAPP_BUSINESS_ACCOUNT_ID'),
+                'app_secret'          => env('DELIVRA_WHATSAPP_APP_SECRET'),
+                'default_number'      => 'main',
+                'numbers'             => [
+                    'main' => env('DELIVRA_WHATSAPP_PHONE_NUMBER_ID'),
+                ],
+            ],
+        ],
+
+        /*
+        | Template aliases. Code uses the alias, the env picks the real Meta name.
+        |
+        | 'order_ready' => [
+        |     'name'     => env('WHATSAPP_ORDER_READY_TEMPLATE'),
+        |     'language' => 'ar',
+        |     'account'  => 'default',
+        |     'from'     => 'main',
+        | ],
+        */
+        'templates' => [],
+
+        // Check params against the approved Meta definition before sending (cached).
+        'validate_templates'  => env('DELIVRA_WHATSAPP_VALIDATE_TEMPLATES', false),
+        'templates_cache_ttl' => env('DELIVRA_WHATSAPP_TEMPLATES_CACHE_TTL', 3600),
+
+        'webhook' => [
+            'enabled'      => env('DELIVRA_WHATSAPP_WEBHOOK', false),
+            'path'         => env('DELIVRA_WHATSAPP_WEBHOOK_PATH', 'delivra/whatsapp/webhook'),
+            'verify_token' => env('DELIVRA_WHATSAPP_WEBHOOK_VERIFY_TOKEN'),
+            'middleware'   => [],
+
+            // Seconds to remember processed inbound message ids (Meta retries webhooks).
+            'deduplicate_for' => 86400,
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | HTTP Client Configuration
     |--------------------------------------------------------------------------
     |

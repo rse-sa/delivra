@@ -6,6 +6,7 @@ Delivra is a developer-friendly, multichannel Laravel notification package that 
 
 - **SMS Support**: Multiple Saudi gateways (Unifonic, Msegat, Yamamah, ShamelSMS)
 - **Telegram Support**: All message types (Text, Photo, Video, Document, Poll, Location, Contact)
+- **WhatsApp Support**: Meta Cloud API with many business accounts, class based templates, template validation, webhooks and a test fake
 - **Hybrid Exception Strategy**: Single recipient throws immediately; batch sends all then throws with details
 - **HTTP Timeouts**: Configurable timeouts and retries prevent hanging requests
 - **Rich Response Objects**: Get message IDs, timestamps, and full API responses
@@ -146,6 +147,276 @@ try {
     }
 }
 ```
+
+## WhatsApp
+
+Delivra sends WhatsApp messages through the Meta Cloud API. Requires PHP 8.2 and Laravel 10 or newer.
+
+### Accounts and numbers
+
+Each entry in `delivra.whatsapp.accounts` is one WhatsApp Business Account (WABA). An account has one token and any number of phone numbers.
+
+```php
+'whatsapp' => [
+    'default'              => 'default',
+    'graph_version'        => 'v24.0',
+    'default_country_code' => '966',   // 0501234567 becomes 966501234567
+    'default_language'     => 'ar',
+
+    'accounts' => [
+        'default' => [
+            'token'               => env('DELIVRA_WHATSAPP_TOKEN'),
+            'business_account_id' => env('DELIVRA_WHATSAPP_BUSINESS_ACCOUNT_ID'),
+            'app_secret'          => env('DELIVRA_WHATSAPP_APP_SECRET'),
+            'default_number'      => 'main',
+            'numbers'             => [
+                'main'    => env('DELIVRA_WHATSAPP_PHONE_NUMBER_ID'),
+                'support' => env('DELIVRA_WHATSAPP_SUPPORT_PHONE_NUMBER_ID'),
+            ],
+        ],
+        'sales' => [
+            'token'               => env('SALES_WHATSAPP_TOKEN'),
+            'business_account_id' => env('SALES_WHATSAPP_BUSINESS_ACCOUNT_ID'),
+            'app_secret'          => env('SALES_WHATSAPP_APP_SECRET'),
+            'numbers'             => ['main' => env('SALES_WHATSAPP_PHONE_NUMBER_ID')],
+        ],
+    ],
+],
+```
+
+```php
+whatsapp()->to('0501234567')->text('Hello');                         // default account, default number
+whatsapp()->from('support')->to('0501234567')->text('Hello');        // another number
+whatsapp()->account('sales')->to('0501234567')->text('Hello');       // another account
+whatsapp()->account('sales')->from('main')->to($mobile)->send($message);
+```
+
+A message can also pick its account: `TemplateMessage::make(...)->account('sales')->from('main')`. An explicit `whatsapp()->account()` call wins over the message.
+
+### Templates
+
+Use a template builder for one-off sends:
+
+```php
+use RSE\Delivra\WhatsApp\Messages\TemplateMessage;
+use RSE\Delivra\WhatsApp\Templates\Button;
+use RSE\Delivra\WhatsApp\Templates\Parameter;
+
+whatsapp()->to($mobile)->send(
+    TemplateMessage::make('order_ready', 'ar')
+        ->header(Parameter::document($pdfUrl, 'invoice.pdf'))
+        ->body([
+            'name'   => $order->company,                       // named param {{name}}
+            'amount' => Parameter::currency(1250.5, 'SAR'),
+            'due'    => $order->due_at,                        // dates become date_time params
+        ])
+        ->urlButton($order->uuid)                              // button 0, the {{1}} in the URL
+        ->button(1, Button::quickReply('wa_unsubscribe'))
+        ->tracking("order:{$order->id}")                       // returned in status webhooks
+);
+
+// positional templates ({{1}}, {{2}}) take a list
+whatsapp()->to($mobile)->template('hello', ['Ali', 'Sara'], 'en');
+```
+
+Body keys that are strings become named params. A plain list becomes positional params. Button array keys are the button index in the template.
+
+#### Class based templates
+
+Give each approved template its own class:
+
+```php
+use RSE\Delivra\WhatsApp\Templates\Button;
+use RSE\Delivra\WhatsApp\Templates\Parameter;
+use RSE\Delivra\WhatsApp\Templates\Template;
+
+class OrderReadyForPayment extends Template
+{
+    protected ?string $name = 'order_ready_for_payment';   // defaults to the snake cased class name
+    protected ?string $language = 'ar';
+    protected ?string $account = null;                      // optional
+    protected ?string $from = null;                         // optional
+
+    public function __construct(public DistOrder $order) {}
+
+    public function body(): array
+    {
+        return [
+            'name'   => $this->order->user->company,
+            'id'     => $this->order->code,
+            'amount' => Parameter::currency($this->order->getRemainingAmount(), 'SAR'),
+            'hours'  => 24,
+        ];
+    }
+
+    public function buttons(): array
+    {
+        return [Button::url($this->order->uuid)];
+    }
+}
+
+whatsapp()->to($mobile)->send(new OrderReadyForPayment($order));
+```
+
+Generate the class from the approved Meta definition. The command fills in the header, body variables and buttons that need a value:
+
+```bash
+php artisan make:whatsapp-template OrderReadyForPayment --template=order_ready_for_payment --account=default
+```
+
+List the templates of an account with their status, variables and buttons:
+
+```bash
+php artisan delivra:whatsapp-templates --account=sales --fresh
+```
+
+#### Template aliases
+
+Code uses a stable alias. The config maps it to the real Meta name, so each environment can use a different template:
+
+```php
+'templates' => [
+    'order_ready_for_payment' => [
+        'name'     => env('WHATSAPP_ORDER_READY_TEMPLATE'),
+        'language' => 'ar',
+        'account'  => 'sales',
+        'from'     => 'main',
+    ],
+],
+```
+
+#### Validation before send
+
+Set `DELIVRA_WHATSAPP_VALIDATE_TEMPLATES=true` to check each template message against its Meta definition before Delivra calls the API. Delivra caches the definitions for `templates_cache_ttl` seconds. A mismatch throws `TemplateValidationException` with every problem in `$e->errors`, for example a missing named param, a wrong param count, a missing media header, or a missing URL button value.
+
+```php
+whatsapp()->account('sales')->templates()->all();           // Collection of TemplateDefinition
+whatsapp()->templates()->find('order_ready', 'ar');
+whatsapp()->templates()->refresh();
+```
+
+### Other messages
+
+These types work only inside the 24 hour customer service window:
+
+```php
+use RSE\Delivra\WhatsApp\Messages\ButtonsMessage;
+use RSE\Delivra\WhatsApp\Messages\ListMessage;
+use RSE\Delivra\WhatsApp\Messages\LocationMessage;
+use RSE\Delivra\WhatsApp\Messages\MediaMessage;
+use RSE\Delivra\WhatsApp\Messages\ReactionMessage;
+
+whatsapp()->to($mobile)->send(MediaMessage::document($url, 'invoice.pdf', 'Your invoice'));
+whatsapp()->to($mobile)->send(ButtonsMessage::make('Stop messages?')->button('wa_unsubscribe', 'Unsubscribe'));
+whatsapp()->to($mobile)->send(ListMessage::make('Pick a branch', 'Branches')->section('Riyadh', ['r1' => 'Olaya', 'r2' => 'Malqa']));
+whatsapp()->to($mobile)->send(ReactionMessage::make($incomingId, '👍'));
+whatsapp()->to($mobile)->send(LocationMessage::make(24.71, 46.67, 'Head office'));
+
+whatsapp()->markAsRead($incomingId, typing: true);
+$media = whatsapp()->downloadMedia($mediaId);    // ->mimeType, ->contents, ->save($path)
+```
+
+Every message type accepts `replyTo($messageId)` and `tracking($data)`.
+
+### Responses and errors
+
+One recipient returns a `WhatsAppResponse` with `messageId`, `waId`, `messageStatus`, `account` and `phoneNumberId`. Many recipients return a `WhatsAppBatchResponse`. When any recipient fails, Delivra throws `WhatsAppBatchException`.
+
+Delivra maps Meta error codes to exceptions. All of them extend `ApiErrorException`, which has `errorCode`, `errorSubcode`, `details`, `traceId` and `response`:
+
+| Exception | Meta codes |
+|---|---|
+| `ReEngagementRequiredException` | 131047, more than 24 hours since the last user message |
+| `RecipientUnavailableException` | 131026 |
+| `TemplateParameterException` | 132000, 132012 |
+| `TemplateNotFoundException` | 132001 |
+| `RateLimitException` | 4, 80007, 130429, 131048, 131056 |
+| `AuthenticationException` | 190 |
+
+Delivra fires `DelivraMessageSending`, `DelivraMessageSent` and `DelivraMessageFailed` with channel `whatsapp`. The `driver` property holds the account name. When a `DelivraMessageSending` listener returns `false`, Delivra skips the message.
+
+### Opt-out
+
+Delivra does not store opt-outs. Register a callback and Delivra checks it before each send:
+
+```php
+// AppServiceProvider::boot()
+whatsapp()->canSendUsing(fn (string $recipient, $message, $account) => ! WhatsappNumber::isBlocked($recipient));
+```
+
+A direct send to a blocked number throws `RecipientBlockedException`. The notification channel skips the number.
+
+### Webhooks
+
+Enable the route and set the verify token. Every account that receives webhooks needs its `app_secret`:
+
+```dotenv
+DELIVRA_WHATSAPP_WEBHOOK=true
+DELIVRA_WHATSAPP_WEBHOOK_VERIFY_TOKEN=some-random-string
+```
+
+Delivra registers `GET` and `POST /delivra/whatsapp/webhook`, named `delivra.whatsapp.webhook`. In Meta, set the callback URL to that route. Change the path with `webhook.path` and add middleware with `webhook.middleware`. The route has no CSRF middleware by default.
+
+The `POST` route rejects requests without a valid `X-Hub-Signature-256` from one of the configured app secrets. Delivra skips inbound message ids it has already processed for `webhook.deduplicate_for` seconds. Delivra fires these events:
+
+| Event | Payload |
+|---|---|
+| `WhatsAppMessageReceived` | `$event->message`: `InboundMessage` with `from`, `type`, `contactName`, `account`, `text()`, `buttonId()`, `mediaId()`, `location()` |
+| `WhatsAppStatusUpdated` | `$event->status`: `StatusUpdate` with `messageId`, `status` (`MessageStatus` enum), `tracking`, `errorCode()` |
+| `WhatsAppTemplateStatusUpdated` | Meta approved, rejected, paused or disabled a template |
+| `WhatsAppWebhookReceived` | Every change, raw, for fields Delivra does not map |
+
+```php
+Event::listen(function (WhatsAppMessageReceived $event) {
+    if ($event->message->buttonId() === 'wa_unsubscribe') {
+        WhatsappNumber::block($event->message->from);
+    }
+});
+```
+
+### WhatsApp notifications
+
+```php
+class OrderReadyNotification extends Notification
+{
+    public function via(object $notifiable): array
+    {
+        return ['whatsapp'];
+    }
+
+    public function toWhatsApp(object $notifiable): OrderReadyForPayment
+    {
+        return new OrderReadyForPayment($this->order);
+    }
+}
+
+// on the notifiable model
+public function routeNotificationForWhatsApp(): ?string
+{
+    return $this->mobile;
+}
+```
+
+`toWhatsApp()` returns a class template or any message. When it returns `null`, Delivra sends nothing.
+
+### Testing
+
+```php
+use RSE\Delivra\Facades\WhatsApp;
+
+$fake = WhatsApp::fake();
+
+// ... code that sends
+
+$fake->assertTemplateSent(OrderReadyForPayment::class, fn ($template) => $template->order->is($order));
+$fake->assertTemplateSent('order_ready_for_payment');        // Meta name or config alias
+$fake->assertSentTo('0501234567', OrderReadyForPayment::class);
+$fake->assertSent(fn ($sent) => $sent->account === 'sales');
+$fake->assertSentCount(1);
+$fake->assertNothingSent();
+```
+
+The fake makes no HTTP calls and skips template validation.
 
 ## Laravel Notifications
 

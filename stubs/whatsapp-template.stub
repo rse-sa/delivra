@@ -1,0 +1,29 @@
+<?php
+
+namespace {{ namespace }};
+
+use RSE\Delivra\WhatsApp\Templates\Button;
+use RSE\Delivra\WhatsApp\Templates\Parameter;
+use RSE\Delivra\WhatsApp\Templates\Template;
+
+class {{ class }} extends Template
+{
+    protected ?string $name = '{{ template }}';
+
+    protected ?string $language = '{{ language }}';
+
+    public function header(): Parameter|string|null
+    {
+        return {{ header }};
+    }
+
+    public function body(): array
+    {
+        return [{{ body }}];
+    }
+
+    public function buttons(): array
+    {
+        return [{{ buttons }}];
+    }
+}

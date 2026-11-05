@@ -23,6 +23,23 @@ abstract class TestCase extends BaseTestCase
         $app['config']->set('delivra.telegram.default_chat_id', 'test-chat-id');
         $app['config']->set('delivra.telegram.parse_mode', 'html');
 
+        $app['config']->set('delivra.whatsapp.default_country_code', '966');
+        $app['config']->set('delivra.whatsapp.accounts', [
+            'default' => [
+                'token'               => 'default-token',
+                'business_account_id' => 'waba-default',
+                'app_secret'          => 'secret-default',
+                'default_number'      => 'main',
+                'numbers'             => ['main' => '1001', 'support' => '1002'],
+            ],
+            'sales' => [
+                'token'               => 'sales-token',
+                'business_account_id' => 'waba-sales',
+                'app_secret'          => 'secret-sales',
+                'numbers'             => ['main' => '2001'],
+            ],
+        ]);
+
         $app['config']->set('delivra.http.timeout', 10);
         $app['config']->set('delivra.http.connect_timeout', 5);
         $app['config']->set('delivra.http.retries', 3);
