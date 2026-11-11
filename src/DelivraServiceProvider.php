@@ -4,6 +4,9 @@ namespace RSE\Delivra;
 
 use Illuminate\Notifications\ChannelManager;
 use Illuminate\Support\ServiceProvider;
+use RSE\Delivra\Fcm\Channels\FcmChannel;
+use RSE\Delivra\Fcm\Console\TestCommand as FcmTestCommand;
+use RSE\Delivra\Fcm\FcmManager;
 use RSE\Delivra\Sms\Channels\SmsChannel;
 use RSE\Delivra\Sms\Sms;
 use RSE\Delivra\Telegram\Channels\TelegramChannel;
@@ -34,6 +37,12 @@ class DelivraServiceProvider extends ServiceProvider
 
         $this->app->alias('delivra-whatsapp', WhatsAppManager::class);
 
+        $this->app->singleton('delivra-fcm', function ($app) {
+            return new FcmManager($app->make('config')->get('delivra.fcm', []));
+        });
+
+        $this->app->alias('delivra-fcm', FcmManager::class);
+
         $this->app->bind(WebhookHandler::class, function ($app) {
             return new WebhookHandler(
                 $app->make('delivra-whatsapp'),
@@ -56,6 +65,7 @@ class DelivraServiceProvider extends ServiceProvider
             $this->commands([
                 ListTemplatesCommand::class,
                 MakeTemplateCommand::class,
+                FcmTestCommand::class,
             ]);
         }
 
@@ -75,6 +85,12 @@ class DelivraServiceProvider extends ServiceProvider
             $manager->extend('whatsapp', function () {
                 return new WhatsAppChannel;
             });
+
+            if ($name = config('delivra.fcm.channel')) {
+                $manager->extend($name, function () {
+                    return new FcmChannel;
+                });
+            }
         });
     }
 }

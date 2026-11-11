@@ -106,6 +106,42 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Firebase Cloud Messaging (HTTP v1)
+    |--------------------------------------------------------------------------
+    |
+    | Each project is one Firebase project with its service account.
+    | Use "credentials" (path to the JSON file, or the JSON itself), or the
+    | three single values when you keep them in .env.
+    */
+
+    'fcm' => [
+        'default' => env('DELIVRA_FCM_PROJECT', 'default'),
+
+        'projects' => [
+            'default' => [
+                'credentials'  => env('DELIVRA_FCM_CREDENTIALS'),
+                'project_id'   => env('DELIVRA_FCM_PROJECT_ID'),
+                'client_email' => env('DELIVRA_FCM_CLIENT_EMAIL'),
+                'private_key'  => env('DELIVRA_FCM_PRIVATE_KEY'),
+            ],
+        ],
+
+        // Notification channel name. Null skips registration, via() can still use FcmChannel::class.
+        'channel' => env('DELIVRA_FCM_CHANNEL', 'fcm'),
+
+        // Parallel requests per chunk of tokens.
+        'concurrency' => env('DELIVRA_FCM_CONCURRENCY', 50),
+
+        // Transient failures (429, 5xx) are retried once. Max seconds to wait, Retry-After is capped by it.
+        'retry_max_delay' => env('DELIVRA_FCM_RETRY_MAX_DELAY', 5),
+
+        'url'       => env('DELIVRA_FCM_URL', 'https://fcm.googleapis.com'),
+        'iid_url'   => env('DELIVRA_FCM_IID_URL', 'https://iid.googleapis.com'),
+        'oauth_url' => env('DELIVRA_FCM_OAUTH_URL', 'https://oauth2.googleapis.com/token'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | HTTP Client Configuration
     |--------------------------------------------------------------------------
     |

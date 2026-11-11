@@ -7,6 +7,7 @@ Delivra is a developer-friendly, multichannel Laravel notification package that 
 - **SMS Support**: Multiple Saudi gateways (Unifonic, Msegat, Yamamah, ShamelSMS)
 - **Telegram Support**: All message types (Text, Photo, Video, Document, Poll, Location, Contact)
 - **WhatsApp Support**: Meta Cloud API with many business accounts, class based templates, template validation, webhooks and a test fake
+- **Push Notifications (FCM)**: Firebase HTTP v1 for Android, iOS and web, many projects, topics, invalid-token events and a test fake
 - **Hybrid Exception Strategy**: Single recipient throws immediately; batch sends all then throws with details
 - **HTTP Timeouts**: Configurable timeouts and retries prevent hanging requests
 - **Rich Response Objects**: Get message IDs, timestamps, and full API responses
@@ -190,6 +191,42 @@ Features:
 - Meta error codes mapped to exceptions.
 - Webhook route with signature check and events for inbound messages, statuses and template changes.
 - `whatsapp` notification channel, opt-out hook and `WhatsApp::fake()` for tests.
+
+## Push notifications (FCM)
+
+Delivra sends push notifications to Android, iOS and web apps through the Firebase Cloud Messaging HTTP v1 API. It uses the service account key directly and needs no Firebase SDK.
+
+The full guide is in [docs/fcm.md](docs/fcm.md).
+
+```dotenv
+DELIVRA_FCM_CREDENTIALS=storage/app/firebase.json
+```
+
+```php
+use RSE\Delivra\Fcm\Messages\FcmMessage;
+
+$report = fcm()->to($tokens)->send(
+    FcmMessage::make('Order ready', 'Your order #15 is ready')
+        ->data(['notify_type' => 'order', 'notify_id' => 15])
+        ->webpush(fn ($web) => $web->link('https://app.example.com/orders/15'))
+);
+
+$report->invalidTokens(); // delete these
+
+fcm()->topic('news')->send(FcmMessage::make('News'));
+fcm()->subscribe('news', $tokens);
+```
+
+Features:
+
+- Many Firebase projects. The OAuth token is cached per project.
+- Android, APNs and web options, silent pushes, TTL and collapse keys.
+- Send to tokens, topics or conditions, with parallel requests.
+- Topic subscribe and unsubscribe.
+- Per-token results. Dead tokens fire `FcmTokenInvalid`, so your app cleans its own token table.
+- Only configuration errors throw. A failed push never breaks the caller.
+- `fcm` notification channel that accepts a token, a list, or tokens per platform.
+- `Fcm::fake()` for tests and `delivra:fcm-test` to check the setup.
 
 ## Laravel Notifications
 

@@ -1,5 +1,6 @@
 <?php
 
+use RSE\Delivra\Fcm\FcmManager;
 use RSE\Delivra\Sms\Sms;
 use RSE\Delivra\Telegram\Telegram;
 use RSE\Delivra\WhatsApp\WhatsAppManager;
@@ -15,6 +16,13 @@ if (! function_exists('telegram')) {
     function telegram(): Telegram
     {
         return app('delivra-telegram');
+    }
+}
+
+if (! function_exists('fcm')) {
+    function fcm(): FcmManager
+    {
+        return app('delivra-fcm');
     }
 }
 

@@ -3,7 +3,7 @@
     "description": "Easy Notifications Delivery",
     "license": "MIT",
     "type": "library",
-    "keywords": ["laravel", "sms", "telegram", "whatsapp", "notifications"],
+    "keywords": ["laravel", "sms", "telegram", "whatsapp", "fcm", "firebase", "push", "notifications"],
     "authors": [
         {
             "name": "Muhannad A",
@@ -20,6 +20,9 @@
         "illuminate/console": ">=10.0",
         "guzzlehttp/guzzle": "^7.0",
         "nesbot/carbon": "^2.0|^3.0"
+    },
+    "suggest": {
+        "ext-openssl": "Required to sign the Firebase OAuth token for FCM push notifications."
     },
     "require-dev": {
         "phpunit/phpunit": ">=9.0",
