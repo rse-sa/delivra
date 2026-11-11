@@ -181,9 +181,10 @@ class WhatsAppManager
         $payload = $this->payloadFor($recipient, $message);
         $body    = $message->description();
 
-        $results = event(new DelivraMessageSending('whatsapp', $recipient, $body, $payload, $account->name, null, $notifiable, $notification, $message));
+        // halt mode: Laravel never puts a listener's false into the normal results
+        $result = event(new DelivraMessageSending('whatsapp', $recipient, $body, $payload, $account->name, null, $notifiable, $notification, $message), [], true);
 
-        if (in_array(false, (array) $results, true)) {
+        if ($result === false) {
             return null;
         }
 

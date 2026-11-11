@@ -356,6 +356,8 @@ Delivra fires the shared Delivra events with channel `fcm`, once per token or to
 
 `recipient` holds the masked token or `topic:news`. `payload` in `DelivraMessageSending` is the FCM message without the target.
 
+Delivra fires `DelivraMessageSending` in halt mode, like Laravel's `NotificationSending`. The first listener that returns a value other than `null` stops the listeners after it. Return nothing from listeners that only log.
+
 ## Web: service worker
 
 The Firebase JS SDK needs `firebase-messaging-sw.js` at the site root. Delivra does not publish it. This sample shows the two parts that depend on the payload:

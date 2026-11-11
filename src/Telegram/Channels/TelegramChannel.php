@@ -52,8 +52,8 @@ class TelegramChannel
             $token = $this->telegram->getTokenForMessage($singleMessage);
             $body  = $this->getMessageBody($singleMessage);
 
-            $eventResults = event(new DelivraMessageSending('telegram', $chatId, $body, $payload, null, $token, $notifiable, $notification, $singleMessage));
-            if (isset($eventResults[0]) && $eventResults[0] === false) {
+            // halt mode: Laravel never puts a listener's false into the normal results
+            if (event(new DelivraMessageSending('telegram', $chatId, $body, $payload, null, $token, $notifiable, $notification, $singleMessage), [], true) === false) {
                 continue;
             }
 

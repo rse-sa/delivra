@@ -52,8 +52,8 @@ class SmsChannel
                 'driver'    => $driver,
             ];
 
-            $eventResults = event(new DelivraMessageSending('sms', $recipient, $body, $payload, $driver, null, $notifiable, $notification));
-            if (isset($eventResults[0]) && $eventResults[0] === false) {
+            // halt mode: Laravel never puts a listener's false into the normal results
+            if (event(new DelivraMessageSending('sms', $recipient, $body, $payload, $driver, null, $notifiable, $notification), [], true) === false) {
                 continue;
             }
 

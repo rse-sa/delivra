@@ -717,6 +717,8 @@ Delivra fires the shared Delivra events with channel `whatsapp`:
 
 When a `DelivraMessageSending` listener returns `false`, Delivra skips that recipient. `body` holds the text, the caption or `[template] name`.
 
+Delivra fires `DelivraMessageSending` in halt mode, like Laravel's `NotificationSending`. The first listener that returns a value other than `null` stops the listeners after it. Return nothing from listeners that only log.
+
 Log every outbound message in your own table:
 
 ```php
