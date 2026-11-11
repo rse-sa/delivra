@@ -2,14 +2,18 @@
 
 namespace RSE\Delivra\WhatsApp;
 
+use finfo;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use RSE\Delivra\Exceptions\WhatsApp\ApiErrorException;
 use RSE\Delivra\Exceptions\WhatsApp\WhatsAppException;
 use RSE\Delivra\WhatsApp\Messages\Message;
 use RSE\Delivra\WhatsApp\Templates\Template;
 use RSE\Delivra\WhatsApp\Templates\TemplateRegistry;
+use SplFileInfo;
 
 /**
  * One WhatsApp Business Account with its phone numbers.
@@ -133,6 +137,32 @@ class Account
         }
 
         return (bool) $response->json('success');
+    }
+
+    /**
+     * Upload a local file to Meta and return its media id. Meta keeps it for 30 days.
+     */
+    public function upload(string|SplFileInfo $file, ?string $filename = null): string
+    {
+        $path = $file instanceof SplFileInfo ? $file->getPathname() : $file;
+
+        if (! is_file($path)) {
+            throw new WhatsAppException("WhatsApp media file [{$path}] does not exist.");
+        }
+
+        $filename ??= $file instanceof UploadedFile ? $file->getClientOriginalName() : basename($path);
+
+        return $this->uploadContents(file_get_contents($path), $filename, File::mimeType($path) ?: null);
+    }
+
+    /**
+     * Upload raw bytes, e.g. from a Storage disk, and return the media id.
+     */
+    public function uploadContents(string $contents, string $filename, ?string $mimeType = null): string
+    {
+        $mimeType ??= (new finfo(FILEINFO_MIME_TYPE))->buffer($contents) ?: 'application/octet-stream';
+
+        return $this->manager->uploadMedia($this, $contents, $filename, $mimeType);
     }
 
     public function mediaUrl(string $mediaId): string

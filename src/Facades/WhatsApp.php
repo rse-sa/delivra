@@ -14,7 +14,10 @@ use RSE\Delivra\WhatsApp\WhatsAppManager;
  * @method static \RSE\Delivra\WhatsApp\Messages\TextMessage text(string $body)
  * @method static \RSE\Delivra\WhatsApp\Messages\TemplateMessage template(string $name, ?string $language = null)
  * @method static bool markAsRead(string $messageId, bool $typing = false)
+ * @method static string upload(string|\SplFileInfo $file, ?string $filename = null)
+ * @method static string uploadContents(string $contents, string $filename, ?string $mimeType = null)
  * @method static \RSE\Delivra\WhatsApp\Media downloadMedia(string $mediaId)
+ * @method static string mediaUrl(string $mediaId)
  * @method static \RSE\Delivra\WhatsApp\Templates\TemplateRegistry templates()
  *
  * @see WhatsAppManager

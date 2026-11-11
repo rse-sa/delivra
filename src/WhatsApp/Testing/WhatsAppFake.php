@@ -16,6 +16,9 @@ class WhatsAppFake extends WhatsAppManager
     /** @var list<SentMessage> */
     protected array $sent = [];
 
+    /** @var list<array{id: string, filename: string, mimeType: string, contents: string, account: string}> */
+    protected array $uploads = [];
+
     public function __construct(array $config = [])
     {
         // never call Meta to validate templates in tests
@@ -42,6 +45,45 @@ class WhatsAppFake extends WhatsAppManager
             waId: $payload['to'],
             messageStatus: 'accepted',
         );
+    }
+
+    public function uploadMedia(Account $account, string $contents, string $filename, string $mimeType): string
+    {
+        $id = 'fake-media-' . (count($this->uploads) + 1);
+
+        $this->uploads[] = compact('id', 'filename', 'mimeType', 'contents') + ['account' => $account->name];
+
+        return $id;
+    }
+
+    /**
+     * @return Collection<int, array{id: string, filename: string, mimeType: string, contents: string, account: string}>
+     */
+    public function uploads(): Collection
+    {
+        return collect($this->uploads);
+    }
+
+    /**
+     * @param  string|Closure(array): bool|null  $filename  file name or a callback that gets the upload
+     */
+    public function assertUploaded(string|Closure|null $filename = null): static
+    {
+        $filter = is_string($filename) ? fn (array $upload) => $upload['filename'] === $filename : $filename;
+
+        PHPUnit::assertTrue(
+            $this->uploads()->filter($filter ?? fn () => true)->isNotEmpty(),
+            $filename === null ? 'No WhatsApp media was uploaded.' : 'The expected WhatsApp media was not uploaded.'
+        );
+
+        return $this;
+    }
+
+    public function assertNothingUploaded(): static
+    {
+        PHPUnit::assertEmpty($this->uploads, count($this->uploads) . ' unexpected WhatsApp media files were uploaded.');
+
+        return $this;
     }
 
     /**

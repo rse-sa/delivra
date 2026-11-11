@@ -224,6 +224,25 @@ class WhatsAppManager
     }
 
     /**
+     * The only place that calls the Cloud API to upload media. The fake overrides it.
+     */
+    public function uploadMedia(Account $account, string $contents, string $filename, string $mimeType): string
+    {
+        $response = $account->http()
+            ->attach('file', $contents, $filename, ['Content-Type' => $mimeType])
+            ->post($account->phoneNumberId() . '/media', [
+                'messaging_product' => 'whatsapp',
+                'type'              => $mimeType,
+            ]);
+
+        if ($response->failed()) {
+            throw ApiErrorException::fromResponse($response);
+        }
+
+        return (string) $response->json('id');
+    }
+
+    /**
      * Digits only, with the default country code for local numbers.
      */
     public function formatNumber(string $number): string

@@ -283,7 +283,7 @@ Create other types with `RSE\Delivra\WhatsApp\Templates\Parameter`:
 | `Parameter::document(string $media, ?string $filename = null)` | Document header. |
 | `Parameter::location($latitude, $longitude, $name = null, $address = null)` | Location header. |
 
-For media, pass a public `https://` link or the id of media you uploaded to Meta. Delivra sends a value that starts with `http` as a link and any other value as a media id.
+For media, pass a public `https://` link or the id of media you uploaded to Meta with [`upload()`](#upload-media). Delivra sends a value that starts with `http` as a link and any other value as a media id.
 
 ### Buttons
 
@@ -502,7 +502,7 @@ use RSE\Delivra\WhatsApp\Messages\TextMessage;
 // text
 whatsapp()->to($mobile)->send(TextMessage::make('Visit https://example.com')->previewUrl());
 
-// media: link or uploaded media id
+// media: link or media id from upload()
 whatsapp()->to($mobile)->send(MediaMessage::image($url, 'Caption'));
 whatsapp()->to($mobile)->send(MediaMessage::video($url, 'Caption'));
 whatsapp()->to($mobile)->send(MediaMessage::audio($url));
@@ -570,6 +570,53 @@ $url = whatsapp()->mediaUrl($mediaId);
 ```
 
 Use the account that received the message. The `account` property of an inbound message names it.
+
+### Upload media
+
+Upload a private file, for example an invoice in `storage/`, to get a media id. Send the id in place of a link. Meta keeps uploaded media for 30 days, so you can send one id to many recipients.
+
+```php
+// local path or UploadedFile; the file name defaults to the base name
+$mediaId = whatsapp()->upload(storage_path("app/invoices/{$invoice->id}.pdf"));
+$mediaId = whatsapp()->upload($request->file('attachment'));   // uses the client file name
+
+// raw bytes, for example from an S3 disk; the MIME type is guessed when null
+$mediaId = whatsapp()->uploadContents(Storage::disk('s3')->get($path), 'invoice.pdf', 'application/pdf');
+
+whatsapp()->to($mobile)->send(MediaMessage::document($mediaId, 'invoice.pdf', 'Your invoice'));
+```
+
+Upload from the account that sends the message: `whatsapp()->account('sales')->from('support')->upload($path)`. A missing file throws `WhatsAppException`. Meta errors throw `ApiErrorException`.
+
+Template with a document header and body variables:
+
+```php
+$mediaId = whatsapp()->upload(storage_path("app/invoices/{$invoice->id}.pdf"));
+
+whatsapp()->to($customer->mobile)->send(
+    TemplateMessage::make('invoice_ready', 'ar')
+        ->header(Parameter::document($mediaId, "invoice-{$invoice->number}.pdf"))
+        ->body([
+            'name'   => $customer->name,
+            'number' => $invoice->number,
+            'amount' => Parameter::currency($invoice->total, 'SAR'),
+        ])
+);
+```
+
+The same in a [class based template](#class-based-templates):
+
+```php
+public function header(): Parameter
+{
+    return Parameter::document(
+        whatsapp()->upload(storage_path("app/invoices/{$this->invoice->id}.pdf")),
+        "invoice-{$this->invoice->number}.pdf",
+    );
+}
+```
+
+Delivra calls `header()` once per `send()` call, so each call uploads the file again. Notifications send once per notifiable. To send one file to many people in a loop, upload once and pass the id to the template constructor.
 
 ## Responses
 
@@ -929,6 +976,10 @@ public function test_nothing_is_sent(): void
 | `assertNotSent($classOrNameOrCallback, ?Closure $callback = null)` | No matching message was sent. |
 | `assertSentCount(int $count)` | Total sends. |
 | `assertNothingSent()` | Nothing was sent. |
+| `assertUploaded(string\|Closure\|null $filename = null)` | A file was uploaded. A closure receives each upload array. |
+| `assertNothingUploaded()` | No file was uploaded. |
+
+The fake never calls Meta for uploads. `upload()` returns `fake-media-1`, `fake-media-2` and so on. `$fake->uploads()` returns each upload as an array with `id`, `filename`, `mimeType`, `contents` and `account`.
 
 A string matches a message class, a template class, a Meta template name or an alias. A closure as the first argument receives each `SentMessage`. The second callback receives the source first, then the `SentMessage`. The source is the template class when you sent one, otherwise the message.
 
@@ -941,7 +992,6 @@ To test without the fake, use `Http::fake()`. Delivra calls `https://graph.faceb
 ## Not supported yet
 
 - Carousel and limited time offer templates.
-- Uploading media to Meta. Send public links, or upload with `whatsapp()->http()`.
 - Template management (create, edit, delete). The registry only reads.
 - Contacts messages, call to action URL messages and Flows sent as session messages.
 
