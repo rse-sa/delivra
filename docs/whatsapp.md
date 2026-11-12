@@ -195,6 +195,24 @@ $message = whatsapp()->template('order_ready', 'ar');   // TemplateMessage, not 
 whatsapp()->to($mobile)->send($message->body([...]));   // sent here
 ```
 
+### Builders
+
+These methods on `whatsapp()` return a message object and send nothing. Use them to build a message without importing the message classes, for example in a [notification](#laravel-notifications).
+
+| Method | Returns |
+|---|---|
+| `text(string $body)` | `TextMessage` |
+| `template(string $name, ?string $language = null)` | `TemplateMessage` |
+| `image(string $media, ?string $caption = null)` | `MediaMessage` |
+| `video(string $media, ?string $caption = null)` | `MediaMessage` |
+| `audio(string $media)` | `MediaMessage` |
+| `document(string $media, ?string $filename = null, ?string $caption = null)` | `MediaMessage` |
+| `sticker(string $media)` | `MediaMessage` |
+| `buttons(string $body = '')` | `ButtonsMessage` |
+| `list(string $body = '', string $buttonText = 'Options')` | `ListMessage` |
+| `location(float $latitude, float $longitude, ?string $name = null, ?string $address = null)` | `LocationMessage` |
+| `reaction(string $messageId, string $emoji)` | `ReactionMessage` |
+
 ## Template messages
 
 Meta must approve a template before you can send it. You create templates in WhatsApp Manager or through the API. Delivra sends the template name, the language and the values for its variables.
@@ -895,7 +913,7 @@ You can also set `protected ?string $tracking` in a template class.
 
 ## Laravel notifications
 
-Delivra registers the `whatsapp` notification channel:
+Delivra registers the `whatsapp` notification channel. Build the message inside `toWhatsApp()` with the [builders](#builders):
 
 ```php
 use Illuminate\Notifications\Notification;
@@ -909,10 +927,33 @@ class OrderReadyNotification extends Notification
         return ['whatsapp'];
     }
 
-    public function toWhatsApp(object $notifiable): OrderReadyForPayment
+    public function toWhatsApp(object $notifiable)
     {
-        return new OrderReadyForPayment($this->order);
+        return whatsapp()->template('order_ready_for_payment', 'ar')
+            ->body([
+                'name' => $this->order->user->company,
+                'id'   => $this->order->code,
+            ])
+            ->urlButton($this->order->uuid);
     }
+}
+```
+
+A session message works the same way:
+
+```php
+public function toWhatsApp(object $notifiable)
+{
+    return whatsapp()->document($this->invoiceUrl, 'invoice.pdf', 'Your invoice');
+}
+```
+
+When several places send the same template, return a [template class](#class-based-templates) instead:
+
+```php
+public function toWhatsApp(object $notifiable): OrderReadyForPayment
+{
+    return new OrderReadyForPayment($this->order);
 }
 ```
 

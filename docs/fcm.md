@@ -98,6 +98,8 @@ FCM v1 has no batch endpoint. Delivra sends one request per token and runs `conc
 
 The `Fcm` facade has the same methods: `Fcm::to($token)->send($message)`.
 
+`fcm()->message($title, $body)` is a shortcut for `FcmMessage::make($title, $body)`.
+
 ## Messages
 
 ```php
@@ -184,9 +186,10 @@ Set `link()` for web. Without it, a click on a notification that the Firebase SD
 
 ## Laravel notifications
 
+Build the message inside `toFcm()`. `fcm()->message($title, $body)` returns the same `FcmMessage` as `FcmMessage::make()`, so the notification needs no import:
+
 ```php
 use Illuminate\Notifications\Notification;
-use RSE\Delivra\Fcm\Messages\FcmMessage;
 
 class OrderReady extends Notification
 {
@@ -197,9 +200,9 @@ class OrderReady extends Notification
         return ['fcm'];
     }
 
-    public function toFcm($notifiable, ?string $platform = null): ?FcmMessage
+    public function toFcm($notifiable, ?string $platform = null)
     {
-        return FcmMessage::make('Order ready', "Your order #{$this->order->code} is ready")
+        return fcm()->message('Order ready', "Your order #{$this->order->code} is ready")
             ->data(['notify_type' => 'order', 'notify_id' => $this->order->id])
             ->webpush(fn ($web) => $web->link(route('orders.show', $this->order)));
     }

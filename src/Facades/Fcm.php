@@ -11,6 +11,7 @@ use RSE\Delivra\Fcm\Testing\FcmFake;
  * @method static \RSE\Delivra\Fcm\PendingFcm to(string|iterable $tokens)
  * @method static \RSE\Delivra\Fcm\PendingFcm topic(string $topic)
  * @method static \RSE\Delivra\Fcm\PendingFcm condition(string $condition)
+ * @method static \RSE\Delivra\Fcm\Messages\FcmMessage message(?string $title = null, ?string $body = null)
  * @method static \RSE\Delivra\Fcm\FcmReport send(\RSE\Delivra\Fcm\Messages\FcmMessage $message)
  * @method static \RSE\Delivra\Fcm\FcmReport subscribe(string $topic, string|iterable $tokens)
  * @method static \RSE\Delivra\Fcm\FcmReport unsubscribe(string $topic, string|iterable $tokens)

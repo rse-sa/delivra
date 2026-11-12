@@ -78,6 +78,11 @@ class FcmManager
         return (new PendingFcm($this))->condition($condition);
     }
 
+    public function message(?string $title = null, ?string $body = null): FcmMessage
+    {
+        return FcmMessage::make($title, $body);
+    }
+
     /**
      * Send a message that carries its own topic or condition.
      */

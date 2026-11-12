@@ -43,6 +43,15 @@ class ChannelAndFakeTest extends FcmTestCase
             ->assertNotSent(fn (FcmMessage $message, SentPush $push) => $push->token() === 'h1');
     }
 
+    public function test_notification_builds_message_inline_with_helper(): void
+    {
+        $fake = Fcm::fake();
+
+        (new FcmUser(['token-a']))->notify(new OrderReady(inline: true));
+
+        $fake->assertSentTo('token-a', fn (FcmMessage $message) => $message->getTitle() === 'Inline' && $message->getData()['platform'] === 'all');
+    }
+
     public function test_message_topic_wins_over_tokens(): void
     {
         $fake = Fcm::fake();
@@ -122,7 +131,7 @@ class FcmUser
 
 class OrderReady extends Notification
 {
-    public function __construct(public ?string $topic = null, public bool $skip = false, public string $via = 'fcm') {}
+    public function __construct(public ?string $topic = null, public bool $skip = false, public string $via = 'fcm', public bool $inline = false) {}
 
     public function via($notifiable): array
     {
@@ -133,6 +142,10 @@ class OrderReady extends Notification
     {
         if ($this->skip) {
             return null;
+        }
+
+        if ($this->inline) {
+            return fcm()->message('Inline', 'Built with the helper')->data(['platform' => $platform ?? 'all']);
         }
 
         return FcmMessage::make('Order ready', 'Your order is ready')

@@ -9,7 +9,12 @@ use RSE\Delivra\Events\DelivraMessageSent;
 use RSE\Delivra\Exceptions\WhatsApp\ApiErrorException;
 use RSE\Delivra\Exceptions\WhatsApp\RecipientBlockedException;
 use RSE\Delivra\Exceptions\WhatsApp\WhatsAppException;
+use RSE\Delivra\WhatsApp\Messages\ButtonsMessage;
+use RSE\Delivra\WhatsApp\Messages\ListMessage;
+use RSE\Delivra\WhatsApp\Messages\LocationMessage;
+use RSE\Delivra\WhatsApp\Messages\MediaMessage;
 use RSE\Delivra\WhatsApp\Messages\Message;
+use RSE\Delivra\WhatsApp\Messages\ReactionMessage;
 use RSE\Delivra\WhatsApp\Messages\TemplateMessage;
 use RSE\Delivra\WhatsApp\Messages\TextMessage;
 use RSE\Delivra\WhatsApp\Templates\Template;
@@ -271,6 +276,51 @@ class WhatsAppManager
     public function template(string $name, ?string $language = null): TemplateMessage
     {
         return TemplateMessage::make($name, $language);
+    }
+
+    public function image(string $media, ?string $caption = null): MediaMessage
+    {
+        return MediaMessage::image($media, $caption);
+    }
+
+    public function video(string $media, ?string $caption = null): MediaMessage
+    {
+        return MediaMessage::video($media, $caption);
+    }
+
+    public function audio(string $media): MediaMessage
+    {
+        return MediaMessage::audio($media);
+    }
+
+    public function document(string $media, ?string $filename = null, ?string $caption = null): MediaMessage
+    {
+        return MediaMessage::document($media, $filename, $caption);
+    }
+
+    public function sticker(string $media): MediaMessage
+    {
+        return MediaMessage::sticker($media);
+    }
+
+    public function buttons(string $body = ''): ButtonsMessage
+    {
+        return ButtonsMessage::make($body);
+    }
+
+    public function list(string $body = '', string $buttonText = 'Options'): ListMessage
+    {
+        return ListMessage::make($body, $buttonText);
+    }
+
+    public function location(float $latitude, float $longitude, ?string $name = null, ?string $address = null): LocationMessage
+    {
+        return LocationMessage::make($latitude, $longitude, $name, $address);
+    }
+
+    public function reaction(string $messageId, string $emoji): ReactionMessage
+    {
+        return ReactionMessage::make($messageId, $emoji);
     }
 
     public function getConfig(?string $key = null, mixed $default = null): mixed

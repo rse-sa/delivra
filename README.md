@@ -259,7 +259,6 @@ class OrderShipped extends Notification
 ```php
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
-use RSE\Delivra\Telegram\Messages\TextMessage;
 
 class NewAlert extends Notification
 {
@@ -270,15 +269,33 @@ class NewAlert extends Notification
         return ['telegram'];
     }
 
-    public function toTelegram($notifiable): TextMessage
+    public function toTelegram($notifiable)
     {
-        return TextMessage::make()
-            ->message('<b>New Alert!</b>')
-            ->addUrlButton('View Details', 'https://example.com')
-            ->asHtml();
+        return telegram()->text('<b>New Alert!</b>')
+            ->addUrlButton('View Details', 'https://example.com');
     }
 }
 ```
+
+`telegram()` also has `photo()`, `video()`, `document()`, `poll()`, `location()` and `contact()`. Each returns a message with the default token and parse mode from the config.
+
+### WhatsApp and FCM notifications
+
+Build the message the same way inside `toWhatsApp()` and `toFcm()`:
+
+```php
+public function toWhatsApp($notifiable)
+{
+    return whatsapp()->template('order_ready', 'ar')->body(['name' => $notifiable->name]);
+}
+
+public function toFcm($notifiable, ?string $platform = null)
+{
+    return fcm()->message('Order ready', 'Your order #15 is ready')->data(['notify_id' => 15]);
+}
+```
+
+See [docs/whatsapp.md](docs/whatsapp.md#laravel-notifications) and [docs/fcm.md](docs/fcm.md#laravel-notifications).
 
 ### Mixed Notification
 
