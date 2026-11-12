@@ -35,7 +35,9 @@ Set up your environment variables in `.env`:
 DELIVRA_SMS_DRIVER=unifonic
 DELIVRA_SMS_CREDITS=true
 
-DELIVRA_SMS_UNIFONIC_KEY=your-key
+DELIVRA_SMS_UNIFONIC_APP_SID=your-app-sid
+DELIVRA_SMS_UNIFONIC_USERNAME=your-account-username
+DELIVRA_SMS_UNIFONIC_PASSWORD=your-account-password
 DELIVRA_SMS_UNIFONIC_SENDER=your-sender
 
 # Telegram Configuration
@@ -74,9 +76,74 @@ try {
 // Using facade
 Sms::to('9665000000')->body('Hello')->send();
 
-// Check balance
+// Send from another sender name
+sms()->from('MyBrand')->to('9665000000')->body('Hello')->send();
+
+// Check balance (null when the driver has no balance API)
 sms()->getBalance();
 ```
+
+### SMS driver schema
+
+Each SMS driver describes its settings, so an app can let an admin pick a provider and fill in its settings from a form built at runtime.
+
+```php
+use RSE\Delivra\Facades\Sms;
+use RSE\Delivra\Sms\SmsFeature;
+
+// every configured driver except null, keyed by driver name
+Sms::drivers();                  // Collection of DriverDefinition
+Sms::drivers()->toJson();        // send this to your frontend
+
+Sms::definition('msegat')->supports(SmsFeature::Balance); // true
+Sms::rules('unifonic');          // Laravel validation rules
+```
+
+One driver in the JSON looks like this:
+
+```json
+{
+  "name": "msegat",
+  "label": "Msegat",
+  "features": ["balance", "credits"],
+  "auth_modes": [
+    {
+      "name": "api_key",
+      "label": "API key",
+      "fields": [
+        {"name": "username", "label": "Username", "type": "text", "secret": false, "required": true, "rules": ["required", "string"], "help": null, "placeholder": null, "default": null, "options": null},
+        {"name": "key", "label": "API key", "type": "password", "secret": true, "required": true, "rules": ["required", "string"], "help": null, "placeholder": null, "default": null, "options": null}
+      ]
+    }
+  ],
+  "fields": [
+    {"name": "sender", "label": "Sender name", "type": "text", "secret": false, "required": true, "rules": ["required", "string", "max:11"], "help": null, "placeholder": null, "default": null, "options": null}
+  ]
+}
+```
+
+- `name` is the driver's config key. Post it back and pass it to `Sms::via()`.
+- `auth_modes` lists the ways a provider accepts credentials. When a driver has more than one, show a mode selector and send the chosen mode as `auth_mode`. The rules only validate the chosen mode's fields.
+- `fields` holds settings every mode needs, like the sender name.
+- `secret` fields are credentials. Store them encrypted and never send them back to the browser.
+- `features` lists what the driver supports beyond sending: `bulk`, `balance` and `credits`.
+- Labels follow the app locale. English and Arabic ship with the package. Publish them with `php artisan vendor:publish --tag=delivra-lang` to change them.
+
+Validate the admin's input, store it, then load it into config before the first SMS call, for example in a service provider:
+
+```php
+$validated = $request->validate(Sms::rules($request->input('driver')));
+
+// later, at boot
+config([
+    'delivra.sms.default'                 => $settings->driver,
+    "delivra.sms.drivers.{$settings->driver}" => $settings->values,
+]);
+```
+
+The `Sms` singleton reads config the first time it is resolved. A long-running queue worker keeps that config until it restarts. For one-off sends, `Sms::via($driver, $settings)` takes the settings directly.
+
+Delivra validates a driver's settings when it sends, not when you call `via()`. Invalid settings throw `InvalidDriverSettingsException`, and `getErrors()` returns the messages per setting.
 
 ### Telegram
 
@@ -254,6 +321,15 @@ class OrderShipped extends Notification
 }
 ```
 
+A notification can pick the driver and the sender name for its own message:
+
+```php
+return SmsBuilder::make()
+    ->via('msegat')
+    ->from('MyBrand')
+    ->body('Your order has been shipped!');
+```
+
 ### Telegram Notification
 
 ```php
@@ -339,11 +415,15 @@ use RSE\Delivra\Exceptions\Sms\{
     InvalidPhoneNumberException,
     OutOfBalanceException,
     DriverNotFoundException,
+    InvalidDriverSettingsException,
     ApiErrorException
 };
 
 try {
     sms()->to('invalid')->body('Test')->send();
+} catch (InvalidDriverSettingsException $e) {
+    // Driver settings failed the driver's rules
+    $errors = $e->getErrors(); // ['sender' => ['The sender field is required.']]
 } catch (InvalidPhoneNumberException $e) {
     // Handle invalid number
     echo "Invalid number: {$e->getNumber()}";
@@ -386,10 +466,34 @@ try {
 
 ```php
 use RSE\Delivra\Contracts\SmsDriver;
+use RSE\Delivra\Sms\Schema\AuthMode;
+use RSE\Delivra\Sms\Schema\DriverDefinition;
+use RSE\Delivra\Sms\Schema\Field;
+use RSE\Delivra\Sms\SmsFeature;
 use RSE\Delivra\Sms\SmsResponse;
 
 class CustomDriver extends SmsDriver
 {
+    // Optional. Without it the driver has no fields, rules or features.
+    public static function definition(): DriverDefinition
+    {
+        return DriverDefinition::make()
+            ->label('Custom SMS')
+            ->features([SmsFeature::Balance])
+            ->authModes([
+                AuthMode::make('api_key')->fields([
+                    Field::make('api_key')->secret()->rules('required|string'),
+                ]),
+                AuthMode::make('credentials')->fields([
+                    Field::make('username')->rules('required|string'),
+                    Field::make('password')->secret()->rules('required|string'),
+                ]),
+            ])
+            ->fields([
+                Field::make('sender')->rules('required|string|max:11'),
+            ]);
+    }
+
     public function formatNumber(string $number): string
     {
         // Custom number formatting
@@ -414,12 +518,16 @@ class CustomDriver extends SmsDriver
 'sms' => [
     'drivers' => [
         'custom' => [
-            'class' => CustomDriver::class,
-            'api_key' => 'your-key',
+            'class'     => CustomDriver::class,
+            'auth_mode' => 'api_key',
+            'api_key'   => 'your-key',
+            'sender'    => 'MyBrand',
         ],
     ],
 ],
 ```
+
+Inside the driver, `$this->authMode()` returns the chosen mode and `$this->sender()` returns the message's sender override or the configured sender.
 
 ### Response Objects
 
@@ -432,6 +540,7 @@ $smsResponse = sms()->to('9665000000')->body('Test')->send();
 if ($smsResponse->successful()) {
     echo "Message ID: {$smsResponse->getMessageId()}";
     echo "Credits used: {$smsResponse->getCredits()}";
+    echo "Balance after send: {$smsResponse->getBalance()}"; // Unifonic only
 }
 
 // Telegram Response
@@ -452,13 +561,19 @@ if ($telegramResponse->successful()) {
     'credits' => env('DELIVRA_SMS_CREDITS', true),
     'drivers' => [
         'unifonic' => [
-            'key' => env('DELIVRA_SMS_UNIFONIC_KEY'),
-            'sender' => env('DELIVRA_SMS_UNIFONIC_SENDER'),
+            'app_sid'  => env('DELIVRA_SMS_UNIFONIC_APP_SID'),
+            'username' => env('DELIVRA_SMS_UNIFONIC_USERNAME'),
+            'password' => env('DELIVRA_SMS_UNIFONIC_PASSWORD'),
+            'sender'   => env('DELIVRA_SMS_UNIFONIC_SENDER'),
         ],
         // ... other drivers
     ],
 ],
 ```
+
+Unifonic sends through `el.cloud.unifonic.com` with the App SID and Basic auth from the account username and password. Bulk sends go through the older `api.unifonic.com/rest/Messages/SendBulk` endpoint in one request. Unifonic has no balance API, so `getBalance()` returns `null`; read `getBalance()` on a send response instead.
+
+Upgrading: the Unifonic `key` setting is now `app_sid`, and `username` and `password` are required.
 
 ### Telegram Configuration
 

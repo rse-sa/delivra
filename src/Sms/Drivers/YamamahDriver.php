@@ -6,10 +6,29 @@ use RSE\Delivra\Contracts\SmsDriver;
 use RSE\Delivra\Exceptions\Sms\ApiErrorException;
 use RSE\Delivra\Exceptions\Sms\InvalidPhoneNumberException;
 use RSE\Delivra\Exceptions\Sms\OutOfBalanceException;
+use RSE\Delivra\Sms\Schema\AuthMode;
+use RSE\Delivra\Sms\Schema\DriverDefinition;
+use RSE\Delivra\Sms\Schema\Field;
+use RSE\Delivra\Sms\SmsFeature;
 use RSE\Delivra\Sms\SmsResponse;
 
 class YamamahDriver extends SmsDriver
 {
+    public static function definition(): DriverDefinition
+    {
+        return DriverDefinition::make()
+            ->features([SmsFeature::Balance])
+            ->authModes([
+                AuthMode::make('credentials')->fields([
+                    Field::make('username')->rules('required|string'),
+                    Field::make('password')->secret()->rules('required|string'),
+                ]),
+            ])
+            ->fields([
+                Field::make('sender')->rules('required|string|max:11'),
+            ]);
+    }
+
     public function getBalance(): ?int
     {
         try {
@@ -91,7 +110,7 @@ class YamamahDriver extends SmsDriver
         return [
             'Username'        => $this->settings['username'],
             'Password'        => $this->settings['password'],
-            'Tagname'         => $this->settings['sender'] ?? '',
+            'Tagname'         => $this->sender() ?? '',
             'RecepientNumber' => $recipient,
             'VariableList'    => '',
             'ReplacementList' => '',

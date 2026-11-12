@@ -13,7 +13,7 @@ abstract class TestCase extends BaseTestCase
         $app['config']->set('delivra.sms.credits', false);
         $app['config']->set('delivra.sms.drivers', [
             'null'      => [],
-            'unifonic'  => ['key' => 'test-key', 'sender' => 'test-sender'],
+            'unifonic'  => ['app_sid' => 'test-sid', 'username' => 'user', 'password' => 'secret', 'sender' => 'test-sender'],
             'msegat'    => ['username' => 'test', 'key' => 'test', 'sender' => 'test'],
             'yamamah'   => ['username' => 'test', 'password' => 'test', 'sender' => 'test'],
             'shamelsms' => ['username' => 'test', 'password' => 'test', 'sender' => 'test'],

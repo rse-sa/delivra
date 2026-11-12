@@ -5,7 +5,10 @@ namespace RSE\Delivra\Contracts;
 use Exception;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use RSE\Delivra\Exceptions\Sms\InvalidDriverSettingsException;
+use RSE\Delivra\Sms\Schema\DriverDefinition;
 use RSE\Delivra\Sms\SmsBatchResponse;
 use RSE\Delivra\Sms\SmsBuilder;
 use RSE\Delivra\Sms\SmsResponse;
@@ -96,6 +99,43 @@ abstract class SmsDriver implements SmsDriverInterface
     protected function boot(): void
     {
         //
+    }
+
+    /**
+     * Describe the driver's settings, auth modes and features.
+     * Override it so apps can build a settings form and validate it.
+     */
+    public static function definition(): DriverDefinition
+    {
+        return DriverDefinition::make();
+    }
+
+    /**
+     * @throws InvalidDriverSettingsException
+     */
+    public function validateSettings(): void
+    {
+        $validator = Validator::make($this->settings, static::definition()->rules());
+
+        if ($validator->fails()) {
+            throw new InvalidDriverSettingsException($this->driver, $validator->errors()->toArray());
+        }
+    }
+
+    /**
+     * The auth mode the current settings use, null when the driver declares none.
+     */
+    public function authMode(): ?string
+    {
+        return static::definition()->authModeFor($this->settings)?->getName();
+    }
+
+    /**
+     * The message's sender override, falling back to the configured sender.
+     */
+    public function sender(): ?string
+    {
+        return $this->builder->getSender() ?? $this->settings['sender'] ?? null;
     }
 
     public function send(): SmsResponse|SmsBatchResponse

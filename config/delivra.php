@@ -13,8 +13,10 @@ return [
         'drivers' => [
             'null'     => [],
             'unifonic' => [
-                'key'    => env('DELIVRA_SMS_UNIFONIC_KEY', ''),
-                'sender' => env('DELIVRA_SMS_UNIFONIC_SENDER', ''),
+                'app_sid'  => env('DELIVRA_SMS_UNIFONIC_APP_SID', ''),
+                'username' => env('DELIVRA_SMS_UNIFONIC_USERNAME', ''),
+                'password' => env('DELIVRA_SMS_UNIFONIC_PASSWORD', ''),
+                'sender'   => env('DELIVRA_SMS_UNIFONIC_SENDER', ''),
             ],
             'msegat' => [
                 'username' => env('DELIVRA_SMS_MSEGAT_USERNAME', ''),

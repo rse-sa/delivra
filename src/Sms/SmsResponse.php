@@ -20,6 +20,8 @@ class SmsResponse
 
     protected ?string $messageId = null;
 
+    protected ?float $balance = null;
+
     public function __construct($driver, $recipient, $body)
     {
         $this->driver    = $driver;
@@ -55,6 +57,21 @@ class SmsResponse
     public function setCredits(?float $credit): self
     {
         $this->credits = $credit;
+
+        return $this;
+    }
+
+    /**
+     * Account balance the provider reported with this send, if any.
+     */
+    public function getBalance(): ?float
+    {
+        return $this->balance;
+    }
+
+    public function setBalance(?float $balance): self
+    {
+        $this->balance = $balance;
 
         return $this;
     }

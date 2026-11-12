@@ -2,7 +2,9 @@
 
 namespace RSE\Delivra\Sms;
 
+use Illuminate\Support\Collection;
 use RSE\Delivra\Contracts\SmsDriver;
+use RSE\Delivra\Sms\Schema\DriverDefinition;
 use RSE\Delivra\Exceptions\Sms\DriverNotFoundException;
 use RSE\Delivra\Exceptions\Sms\SmsBatchException;
 use RSE\Delivra\Traits\SanitizesNumbers;
@@ -124,18 +126,66 @@ class Sms
         return $this;
     }
 
+    /**
+     * Every configured driver's definition, keyed by driver name. Skips the null driver.
+     *
+     * @return Collection<string, DriverDefinition>
+     */
+    public function drivers(): Collection
+    {
+        return collect(array_keys($this->config['drivers'] ?? []))
+            ->reject(fn (string $driver) => $driver === 'null')
+            ->mapWithKeys(fn (string $driver) => [$driver => $this->definition($driver)]);
+    }
+
+    /**
+     * @throws DriverNotFoundException
+     */
+    public function definition(string $driver): DriverDefinition
+    {
+        $class = $this->getDriverClass($driver);
+
+        if (! isset($this->config['drivers'][$driver]) || ! is_subclass_of($class, SmsDriver::class)) {
+            throw new DriverNotFoundException($driver);
+        }
+
+        return $class::definition()->name($driver);
+    }
+
+    /**
+     * Laravel validation rules for a driver's settings.
+     */
+    public function rules(string $driver): array
+    {
+        return $this->definition($driver)->rules();
+    }
+
+    /**
+     * Send from this sender name instead of the driver's configured one.
+     */
+    public function from(?string $sender): self
+    {
+        $this->builder->from($sender);
+
+        return $this;
+    }
+
     protected function getDriverInstance(): SmsDriver
     {
         $this->validateDriver();
 
         $class = $this->getDriverClass($this->driver);
 
-        return new $class($this->driver, $this->settings);
+        $driver = new $class($this->driver, $this->settings);
+
+        $driver->validateSettings();
+
+        return $driver;
     }
 
-    protected function getDriverClass($driver): string
+    protected function getDriverClass(string $driver): string
     {
-        return $this->config['drivers'][$this->driver]['class']
+        return $this->config['drivers'][$driver]['class']
             ?? '\\RSE\\Delivra\\Sms\\Drivers\\' . ucfirst(strtolower($driver)) . 'Driver';
     }
 

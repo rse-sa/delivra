@@ -18,6 +18,8 @@
         "illuminate/routing": ">=10.0",
         "illuminate/cache": ">=10.0",
         "illuminate/console": ">=10.0",
+        "illuminate/translation": ">=10.0",
+        "illuminate/validation": ">=10.0",
         "guzzlehttp/guzzle": "^7.0",
         "nesbot/carbon": "^2.0|^3.0"
     },

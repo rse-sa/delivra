@@ -17,6 +17,8 @@ class SmsBuilder
 
     protected ?string $driver = null;
 
+    protected ?string $sender = null;
+
     protected bool $withCredits = false;
 
     public function to($recipients): self
@@ -62,6 +64,21 @@ class SmsBuilder
         $this->driver = $driver;
 
         return $this;
+    }
+
+    /**
+     * Send from this sender name instead of the driver's configured one.
+     */
+    public function from(?string $sender): self
+    {
+        $this->sender = $sender;
+
+        return $this;
+    }
+
+    public function getSender(): ?string
+    {
+        return $this->sender;
     }
 
     public function getRecipients(): array

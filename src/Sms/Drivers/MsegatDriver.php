@@ -7,10 +7,29 @@ use RSE\Delivra\Contracts\SmsDriver;
 use RSE\Delivra\Exceptions\Sms\ApiErrorException;
 use RSE\Delivra\Exceptions\Sms\InvalidPhoneNumberException;
 use RSE\Delivra\Exceptions\Sms\OutOfBalanceException;
+use RSE\Delivra\Sms\Schema\AuthMode;
+use RSE\Delivra\Sms\Schema\DriverDefinition;
+use RSE\Delivra\Sms\Schema\Field;
+use RSE\Delivra\Sms\SmsFeature;
 use RSE\Delivra\Sms\SmsResponse;
 
 class MsegatDriver extends SmsDriver
 {
+    public static function definition(): DriverDefinition
+    {
+        return DriverDefinition::make()
+            ->features([SmsFeature::Balance, SmsFeature::Credits])
+            ->authModes([
+                AuthMode::make('api_key')->fields([
+                    Field::make('username')->rules('required|string'),
+                    Field::make('key')->secret()->rules('required|string'),
+                ]),
+            ])
+            ->fields([
+                Field::make('sender')->rules('required|string|max:11'),
+            ]);
+    }
+
     public function getBalance(): ?int
     {
         try {
@@ -78,7 +97,7 @@ class MsegatDriver extends SmsDriver
                 'userName'    => $this->settings['username'],
                 'apiKey'      => $this->settings['key'],
                 'numbers'     => $recipient,
-                'userSender'  => $this->settings['sender'],
+                'userSender'  => $this->sender(),
                 'msg'         => $this->builder->getBody(),
                 'msgEncoding' => 'UTF8',
             ]);

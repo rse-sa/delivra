@@ -53,7 +53,13 @@ class DelivraServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->loadTranslationsFrom(__DIR__ . '/../lang', 'delivra');
+
         if ($this->app->runningInConsole()) {
+            $this->publishes([
+                __DIR__ . '/../lang' => $this->app->langPath('vendor/delivra'),
+            ], 'delivra-lang');
+
             $this->publishes([
                 __DIR__ . '/../config/delivra.php' => config_path('delivra.php'),
             ], 'delivra-config');
