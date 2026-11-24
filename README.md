@@ -216,6 +216,73 @@ try {
 }
 ```
 
+### Telegram buttons
+
+`addUrlButton()` and `addCallbackButton()` add to the current row. `newRow()` starts the next one.
+
+```php
+telegram()->text('Approve the order?')
+    ->addCallbackButton('Approve', 'approve:15')
+    ->addCallbackButton('Reject', 'reject:15')
+    ->newRow()
+    ->addUrlButton('Open order', 'https://example.com/orders/15');
+```
+
+### Telegram send failures
+
+A failed send throws `TelegramMessageFailedException`. Two subclasses tell you what to do next:
+
+- `BotBlockedException`: Telegram answered 403. The user blocked the bot or deleted the account. Stop sending to this chat.
+- `RateLimitedException`: Telegram answered 429. Wait `$e->retryAfter` seconds.
+
+Connection errors and 5xx answers are retried. Other 4xx answers are not.
+
+### Other Bot API methods
+
+```php
+telegram()->answerCallbackQuery($callbackId, 'Saved');
+telegram()->editMessageText($chatId, $messageId, 'Approved');
+telegram()->call('getMe'); // any method, returns its "result"
+```
+
+### Receiving Telegram updates
+
+Enable the webhook route for the default bot:
+
+```dotenv
+DELIVRA_TELEGRAM_WEBHOOK=true
+DELIVRA_TELEGRAM_WEBHOOK_SECRET=a-long-random-string
+```
+
+Register it with Telegram, then listen to the event:
+
+```bash
+php artisan delivra:telegram-webhook set
+php artisan delivra:telegram-webhook info
+```
+
+```php
+use RSE\Delivra\Telegram\Events\TelegramUpdateReceived;
+
+Event::listen(function (TelegramUpdateReceived $event) {
+    $update = $event->update;
+
+    if ($update->command() === 'start') {
+        $code = $update->commandArgument();
+    }
+});
+```
+
+The route rejects requests without the right `X-Telegram-Bot-Api-Secret-Token` header and drops update ids it has already seen.
+
+`Update` gives the type (`message`, `callback_query`, `my_chat_member`, `other`), chat id and type, sender, text, `command()`, `commandArgument()`, callback id and data, and `botWasBlocked()`. The full payload is in `$update->raw`.
+
+A server with no public HTTPS can poll instead. The bot must have no webhook set:
+
+```bash
+php artisan delivra:telegram-poll
+```
+
 ## WhatsApp
 
 Delivra sends WhatsApp messages through the Meta Cloud API. It needs PHP 8.2 and Laravel 10 or newer.

@@ -2,11 +2,16 @@
 
 namespace RSE\Delivra\Telegram;
 
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
 use RSE\Delivra\Events\DelivraMessageFailed;
 use RSE\Delivra\Events\DelivraMessageSending;
 use RSE\Delivra\Events\DelivraMessageSent;
 use RSE\Delivra\Exceptions\Telegram\ApiErrorException;
+use RSE\Delivra\Exceptions\Telegram\BotBlockedException;
+use RSE\Delivra\Exceptions\Telegram\InvalidTokenException;
+use RSE\Delivra\Exceptions\Telegram\RateLimitedException;
 use RSE\Delivra\Exceptions\Telegram\TelegramBatchException;
 use RSE\Delivra\Exceptions\Telegram\TelegramMessageFailedException;
 use RSE\Delivra\Telegram\Messages\ContactMessage;
@@ -16,6 +21,7 @@ use RSE\Delivra\Telegram\Messages\PhotoMessage;
 use RSE\Delivra\Telegram\Messages\PollMessage;
 use RSE\Delivra\Telegram\Messages\TextMessage;
 use RSE\Delivra\Telegram\Messages\VideoMessage;
+use RSE\Delivra\Telegram\Updates\Update;
 
 class Telegram
 {
@@ -153,21 +159,7 @@ class Telegram
         event(new DelivraMessageSending('telegram', $chatId, $body, $payload, null, $token, null, null, $message));
 
         try {
-            $response = Http::timeout(config('delivra.http.timeout', 10))
-                ->connectTimeout(config('delivra.http.connect_timeout', 5))
-                ->retry(config('delivra.http.retries', 3), config('delivra.http.retry_delay', 100))
-                ->acceptJson()
-                ->post("https://api.telegram.org/bot{$token}/{$endpoint}", $payload);
-
-            $result = $response->json();
-
-            if (! ($result['ok'] ?? false)) {
-                throw new ApiErrorException(
-                    $result['error_code'] ?? 'UNKNOWN',
-                    $result['description'] ?? 'Unknown error',
-                    $result
-                );
-            }
+            $result = $this->request($endpoint, $payload, $token);
 
             $responseObj = new TelegramResponse($chatId, $result);
             event(new DelivraMessageSent('telegram', $chatId, $body, $responseObj->getMessageId(), $responseObj, null, null, $message));
@@ -180,8 +172,120 @@ class Telegram
                 report($e);
             }
 
-            throw new TelegramMessageFailedException($chatId, get_class($message), $e->getMessage());
+            throw $this->failure($e, $chatId, get_class($message));
         }
+    }
+
+    /**
+     * Calls any Bot API method and returns its "result" part.
+     *
+     * @throws ApiErrorException when Telegram answers ok=false
+     */
+    public function call(string $method, array $params = [], ?string $token = null, ?int $timeout = null): mixed
+    {
+        return $this->request($method, $params, $token ?? $this->defaultToken, $timeout)['result'] ?? null;
+    }
+
+    public function answerCallbackQuery(string $callbackQueryId, ?string $text = null, ?string $token = null): void
+    {
+        $this->call('answerCallbackQuery', array_filter([
+            'callback_query_id' => $callbackQueryId,
+            'text'              => $text,
+        ]), $token);
+    }
+
+    /**
+     * Replaces the text and buttons of a sent message. No buttons removes the keyboard.
+     */
+    public function editMessageText(string $chatId, int $messageId, string $text, array $buttons = [], ?string $token = null): void
+    {
+        $this->call('editMessageText', [
+            'chat_id'      => $chatId,
+            'message_id'   => $messageId,
+            'text'         => $text,
+            'parse_mode'   => $this->parseMode,
+            'reply_markup' => json_encode(['inline_keyboard' => $buttons]),
+        ], $token);
+    }
+
+    public function setWebhook(string $url, ?string $secretToken = null, array $allowedUpdates = [], ?string $token = null): void
+    {
+        $this->call('setWebhook', array_filter([
+            'url'             => $url,
+            'secret_token'    => $secretToken,
+            'allowed_updates' => $allowedUpdates ? json_encode($allowedUpdates) : null,
+        ]), $token);
+    }
+
+    public function deleteWebhook(?string $token = null): void
+    {
+        $this->call('deleteWebhook', [], $token);
+    }
+
+    public function getWebhookInfo(?string $token = null): array
+    {
+        return (array) $this->call('getWebhookInfo', [], $token);
+    }
+
+    /**
+     * Long polling. Only works while no webhook is set for the bot.
+     *
+     * @return Update[]
+     */
+    public function getUpdates(?int $offset = null, int $timeout = 30, ?string $token = null): array
+    {
+        $updates = $this->call('getUpdates', array_filter([
+            'offset'  => $offset,
+            'timeout' => $timeout,
+        ]), $token, $timeout + 10);
+
+        return array_map(fn (array $update) => Update::fromArray($update), (array) $updates);
+    }
+
+    /**
+     * Retries connection failures and 5xx only. Telegram's 4xx answers come back as they are.
+     */
+    protected function request(string $method, array $params, ?string $token, ?int $timeout = null): array
+    {
+        if (blank($token)) {
+            throw new InvalidTokenException;
+        }
+
+        $response = Http::timeout($timeout ?? config('delivra.http.timeout', 10))
+            ->connectTimeout(config('delivra.http.connect_timeout', 5))
+            ->retry(
+                config('delivra.http.retries', 3),
+                config('delivra.http.retry_delay', 100),
+                fn (\Throwable $e) => $e instanceof ConnectionException || ($e instanceof RequestException && $e->response->serverError()),
+                throw: false,
+            )
+            ->acceptJson()
+            ->post("https://api.telegram.org/bot{$token}/{$method}", $params);
+
+        $result = (array) $response->json();
+
+        if (! ($result['ok'] ?? false)) {
+            throw new ApiErrorException(
+                (string) ($result['error_code'] ?? $response->status()),
+                $result['description'] ?? 'Unknown error',
+                $result
+            );
+        }
+
+        return $result;
+    }
+
+    protected function failure(\Throwable $e, string $chatId, string $messageType): TelegramMessageFailedException
+    {
+        if (! $e instanceof ApiErrorException) {
+            return new TelegramMessageFailedException($chatId, $messageType, $e->getMessage());
+        }
+
+        return match ($e->getErrorCode()) {
+            '403'   => new BotBlockedException($chatId, $messageType, $e->getMessage()),
+            '429'   => new RateLimitedException($chatId, $messageType, $e->getMessage(), (int) ($e->getApiResponse()['parameters']['retry_after'] ?? 1)),
+            default => new TelegramMessageFailedException($chatId, $messageType, $e->getMessage()),
+        };
     }
 
     protected function sendMessageToMultiple($message, array $chatIds): TelegramBatchResponse
@@ -198,23 +302,11 @@ class Telegram
             event(new DelivraMessageSending('telegram', $chatId, $body, $payload, null, $token, null, null, $message));
 
             try {
-                $response = Http::timeout(config('delivra.http.timeout', 10))
-                    ->connectTimeout(config('delivra.http.connect_timeout', 5))
-                    ->retry(config('delivra.http.retries', 3), config('delivra.http.retry_delay', 100))
-                    ->acceptJson()
-                    ->post("https://api.telegram.org/bot{$token}/{$endpoint}", $payload);
+                $result = $this->request($endpoint, $payload, $token);
 
-                $result = $response->json();
-
-                if (! ($result['ok'] ?? false)) {
-                    $error = $result['description'] ?? 'Unknown error';
-                    event(new DelivraMessageFailed('telegram', $chatId, $body, $error, null, null, null, $message));
-                    $batch->addFailure($chatId, $error);
-                } else {
-                    $responseObj = new TelegramResponse($chatId, $result);
-                    event(new DelivraMessageSent('telegram', $chatId, $body, $responseObj->getMessageId(), $responseObj, null, null, $message));
-                    $batch->addSuccess($chatId, $responseObj);
-                }
+                $responseObj = new TelegramResponse($chatId, $result);
+                event(new DelivraMessageSent('telegram', $chatId, $body, $responseObj->getMessageId(), $responseObj, null, null, $message));
+                $batch->addSuccess($chatId, $responseObj);
 
                 // Throttle to avoid 429 errors (Telegram limit: ~30 messages/second)
                 usleep(35000); // ~35ms = ~28 messages/second (safe margin)

@@ -10,6 +10,8 @@ use RSE\Delivra\Fcm\FcmManager;
 use RSE\Delivra\Sms\Channels\SmsChannel;
 use RSE\Delivra\Sms\Sms;
 use RSE\Delivra\Telegram\Channels\TelegramChannel;
+use RSE\Delivra\Telegram\Console\PollCommand as TelegramPollCommand;
+use RSE\Delivra\Telegram\Console\WebhookCommand as TelegramWebhookCommand;
 use RSE\Delivra\Telegram\Telegram;
 use RSE\Delivra\WhatsApp\Channels\WhatsAppChannel;
 use RSE\Delivra\WhatsApp\Console\ListTemplatesCommand;
@@ -34,6 +36,8 @@ class DelivraServiceProvider extends ServiceProvider
         $this->app->singleton('delivra-whatsapp', function ($app) {
             return new WhatsAppManager($app->make('config')->get('delivra.whatsapp', []));
         });
+
+        $this->app->alias('delivra-telegram', Telegram::class);
 
         $this->app->alias('delivra-whatsapp', WhatsAppManager::class);
 
@@ -72,11 +76,17 @@ class DelivraServiceProvider extends ServiceProvider
                 ListTemplatesCommand::class,
                 MakeTemplateCommand::class,
                 FcmTestCommand::class,
+                TelegramWebhookCommand::class,
+                TelegramPollCommand::class,
             ]);
         }
 
         if (config('delivra.whatsapp.webhook.enabled')) {
             $this->loadRoutesFrom(__DIR__ . '/../routes/whatsapp.php');
+        }
+
+        if (config('delivra.telegram.webhook.enabled')) {
+            $this->loadRoutesFrom(__DIR__ . '/../routes/telegram.php');
         }
 
         $this->app->afterResolving(ChannelManager::class, function (ChannelManager $manager) {

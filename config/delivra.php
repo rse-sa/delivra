@@ -46,6 +46,17 @@ return [
         'default_token'   => env('DELIVRA_TELEGRAM_TOKEN'),
         'default_chat_id' => env('DELIVRA_TELEGRAM_CHAT_ID'),
         'parse_mode'      => env('DELIVRA_TELEGRAM_PARSE_MODE', 'html'),
+
+        // Inbound updates for the default bot. Fires TelegramUpdateReceived.
+        'webhook' => [
+            'enabled'      => env('DELIVRA_TELEGRAM_WEBHOOK', false),
+            'path'         => env('DELIVRA_TELEGRAM_WEBHOOK_PATH', 'delivra/telegram/webhook'),
+            'secret_token' => env('DELIVRA_TELEGRAM_WEBHOOK_SECRET'),
+            'middleware'   => [],
+
+            // Seconds to remember processed update ids (Telegram resends until it gets a 200).
+            'deduplicate_for' => 86400,
+        ],
     ],
 
     /*

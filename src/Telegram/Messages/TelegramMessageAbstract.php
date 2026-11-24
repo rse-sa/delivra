@@ -95,19 +95,52 @@ abstract class TelegramMessageAbstract
 
     public function addUrlButton(string $title, string $url): self
     {
-        $this->buttons[] = [
+        return $this->addRawButton([
             'text' => $title,
             'url'  => $url,
-        ];
+        ]);
+    }
+
+    /**
+     * Telegram sends the data back in a callback_query update. Max 64 bytes.
+     */
+    public function addCallbackButton(string $title, string $data): self
+    {
+        return $this->addRawButton([
+            'text'          => $title,
+            'callback_data' => $data,
+        ]);
+    }
+
+    /**
+     * Adds the button to the current keyboard row.
+     */
+    public function addRawButton(array $payload): self
+    {
+        if ($this->buttons === []) {
+            $this->buttons[] = [];
+        }
+
+        $this->buttons[array_key_last($this->buttons)][] = $payload;
 
         return $this;
     }
 
-    public function addRawButton(array $payload): self
+    /**
+     * Buttons added after this go on a new keyboard row.
+     */
+    public function newRow(): self
     {
-        $this->buttons[] = $payload;
+        if ($this->buttons !== [] && end($this->buttons) !== []) {
+            $this->buttons[] = [];
+        }
 
         return $this;
+    }
+
+    public function getButtons(): array
+    {
+        return array_values(array_filter($this->buttons));
     }
 
     protected function validateTokenAndReceivers(): void
@@ -130,9 +163,9 @@ abstract class TelegramMessageAbstract
             'disable_notification' => $this->silently,
         ], $extra);
 
-        if (count($this->buttons) > 0) {
+        if ($this->getButtons() !== []) {
             $params['reply_markup'] = json_encode([
-                'inline_keyboard' => [[$this->buttons]],
+                'inline_keyboard' => $this->getButtons(),
             ]);
         }
 
