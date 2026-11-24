@@ -136,7 +136,7 @@ class Telegram
 
     protected function getMessageReceivers($message): array
     {
-        if (method_exists($message, 'getReceivers')) {
+        if (method_exists($message, 'getReceivers') && $message->getReceivers() !== []) {
             return $message->getReceivers();
         }
 

@@ -193,7 +193,7 @@ telegram()->text('Click below')
     ->to('123456789')
     ->send();
 
-// Silent message
+// Silent message. Text messages without to() go to DELIVRA_TELEGRAM_CHAT_ID.
 telegram()->text('Quiet message')->silently()->send();
 
 // Protected content (prevents forwarding)
@@ -508,22 +508,24 @@ try {
 
 ```php
 use RSE\Delivra\Exceptions\Telegram\{
+    BotBlockedException,
+    RateLimitedException,
     TelegramBatchException,
-    InvalidTokenException,
-    InvalidChatIdException,
-    ApiErrorException,
-    FileUploadException
+    TelegramMessageFailedException
 };
 
 try {
-    telegram()->text('Test')->to('invalid-chat')->send();
-} catch (InvalidChatIdException $e) {
-    // Handle invalid chat ID
-    echo "Invalid chat ID: {$e->getChatId()}";
+    telegram()->text('Test')->to('123456')->send();
+} catch (BotBlockedException $e) {
+    // 403: the user blocked the bot, stop sending to this chat
+} catch (RateLimitedException $e) {
+    // 429: wait $e->retryAfter seconds
+} catch (TelegramMessageFailedException $e) {
+    // any other failure, e.g. "chat not found"
+    echo "Failed for chat {$e->getChatId()}: {$e->getMessage()}";
 } catch (TelegramBatchException $e) {
-    // Handle batch failures
+    // several receivers, some failed
     $batch = $e->getBatchResponse();
-    // Handle partial successes/failures
 }
 ```
 

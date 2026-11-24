@@ -45,6 +45,28 @@ class TelegramBotApiTest extends TestCase
         $this->assertSame([[['text' => 'Open', 'url' => 'https://example.com']]], $message->getButtons());
     }
 
+    public function test_text_message_sends_itself_like_the_other_message_types(): void
+    {
+        Http::fake(['api.telegram.org/*' => Http::response(['ok' => true, 'result' => ['message_id' => 5]])]);
+
+        $response = telegram()->text('Hello')->to('77')->send();
+        telegram()->text('To the default chat')->silently()->send();
+
+        $this->assertSame(5, $response->getMessageId());
+        Http::assertSent(fn ($request) => $request['chat_id'] === '77' && $request['text'] === 'Hello');
+        Http::assertSent(fn ($request) => $request['chat_id'] === 'test-chat-id' && $request['disable_notification'] === true);
+    }
+
+    public function test_text_message_to_many_receivers_returns_a_batch(): void
+    {
+        Http::fake(['api.telegram.org/*' => Http::response(['ok' => true, 'result' => ['message_id' => 5]])]);
+
+        $batch = telegram()->text('Broadcast')->to(['1', '2'])->send();
+
+        $this->assertInstanceOf(\RSE\Delivra\Telegram\TelegramBatchResponse::class, $batch);
+        Http::assertSentCount(2);
+    }
+
     public function test_forbidden_answer_throws_bot_blocked_without_retrying(): void
     {
         Http::fake(['api.telegram.org/*' => Http::response(['ok' => false, 'error_code' => 403, 'description' => 'Forbidden: bot was blocked by the user'], 403)]);
