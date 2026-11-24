@@ -228,6 +228,20 @@ telegram()->text('Approve the order?')
     ->addUrlButton('Open order', 'https://example.com/orders/15');
 ```
 
+### Telegram files
+
+`photo()`, `video()`, `document()` and `thumbnail()` take a local path, a URL or a Telegram `file_id`. A path to an existing file is uploaded. A URL or `file_id` is passed to Telegram as text, so Telegram fetches or reuses the file.
+
+### How Telegram messages are sent
+
+Every message type sends through the same path, whether you call `->send()` on the message, `telegram()->send($message)`, or use the `telegram` notification channel:
+
+- A message without a token uses `DELIVRA_TELEGRAM_TOKEN`. A message without `to()` goes to `DELIVRA_TELEGRAM_CHAT_ID`.
+- `DelivraMessageSending`, then `DelivraMessageSent` or `DelivraMessageFailed`, fire for each chat. A `DelivraMessageSending` listener that returns `false` cancels that chat's send; a cancelled single send returns `null`.
+- Several receivers return a `TelegramBatchResponse`, or throw `TelegramBatchException` when some fail.
+
+Polls are not anonymous unless you call `anonymous()`.
+
 ### Telegram send failures
 
 A failed send throws `TelegramMessageFailedException`. Two subclasses tell you what to do next:

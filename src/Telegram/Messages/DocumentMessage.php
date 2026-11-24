@@ -2,10 +2,6 @@
 
 namespace RSE\Delivra\Telegram\Messages;
 
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Http;
-use RSE\Delivra\Exceptions\Telegram\ApiErrorException;
-
 class DocumentMessage extends TelegramMessageAbstract
 {
     protected ?string $document = null;
@@ -60,42 +56,25 @@ class DocumentMessage extends TelegramMessageAbstract
         return $this->token;
     }
 
-    public function toArray(): array
+    public function getCaption(): ?string
     {
-        return [
-            'caption' => $this->caption,
-        ];
+        return $this->caption;
     }
 
-    public function send(): \RSE\Delivra\Telegram\TelegramResponse
+    /**
+     * Local paths are uploaded; URLs or file_ids go in the document and thumbnail fields.
+     */
+    public function toArray(): array
     {
-        $this->validateTokenAndReceivers();
+        return $this->prepareBasicParameters('', [
+            'document'  => $this->fileField($this->document),
+            'thumbnail' => $this->fileField($this->thumbnail),
+            'caption'   => $this->caption,
+        ]);
+    }
 
-        $request = Http::timeout(config('delivra.http.timeout', 10))
-            ->connectTimeout(config('delivra.http.connect_timeout', 5))
-            ->retry(config('delivra.http.retries', 3), config('delivra.http.retry_delay', 100))
-            ->acceptJson()
-            ->asMultipart()
-            ->attach('document', File::get($this->document), basename($this->document));
-
-        if ($this->thumbnail) {
-            $request->attach('thumbnail', File::get($this->thumbnail), basename($this->thumbnail));
-        }
-
-        $response = $request->post("https://api.telegram.org/bot{$this->token}/sendDocument", $this->prepareBasicParameters($this->receivers[0], [
-            'caption' => $this->caption,
-        ]));
-
-        $result = $response->json();
-
-        if (! ($result['ok'] ?? false)) {
-            throw new ApiErrorException(
-                $result['error_code'] ?? 'UNKNOWN',
-                $result['description'] ?? 'Unknown error',
-                $result
-            );
-        }
-
-        return new \RSE\Delivra\Telegram\TelegramResponse($this->receivers[0], $result);
+    public function attachments(): array
+    {
+        return $this->localFiles(['document' => $this->document, 'thumbnail' => $this->thumbnail]);
     }
 }

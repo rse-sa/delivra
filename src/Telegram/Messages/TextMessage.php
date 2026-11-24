@@ -2,21 +2,9 @@
 
 namespace RSE\Delivra\Telegram\Messages;
 
-use RSE\Delivra\Telegram\Telegram;
-use RSE\Delivra\Telegram\TelegramBatchResponse;
-use RSE\Delivra\Telegram\TelegramResponse;
-
 class TextMessage extends TelegramMessageAbstract
 {
     protected string $message = '';
-
-    /**
-     * Sends through the Telegram manager: default token and chat, sending events, and a batch for many receivers.
-     */
-    public function send(): TelegramResponse|TelegramBatchResponse
-    {
-        return app(Telegram::class)->send($this);
-    }
 
     protected ?string $title = null;
 

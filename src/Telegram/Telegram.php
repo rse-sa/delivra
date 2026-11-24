@@ -4,6 +4,7 @@ namespace RSE\Delivra\Telegram;
 
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use RSE\Delivra\Events\DelivraMessageFailed;
 use RSE\Delivra\Events\DelivraMessageSending;
@@ -19,6 +20,7 @@ use RSE\Delivra\Telegram\Messages\DocumentMessage;
 use RSE\Delivra\Telegram\Messages\LocationMessage;
 use RSE\Delivra\Telegram\Messages\PhotoMessage;
 use RSE\Delivra\Telegram\Messages\PollMessage;
+use RSE\Delivra\Telegram\Messages\TelegramMessageAbstract;
 use RSE\Delivra\Telegram\Messages\TextMessage;
 use RSE\Delivra\Telegram\Messages\VideoMessage;
 use RSE\Delivra\Telegram\Updates\Update;
@@ -106,7 +108,11 @@ class Telegram
         return $this;
     }
 
-    public function send($message = null): TelegramResponse|TelegramBatchResponse
+    /**
+     * One receiver gives a TelegramResponse, several a TelegramBatchResponse.
+     * Null when a DelivraMessageSending listener cancelled the only send.
+     */
+    public function send($message = null): TelegramResponse|TelegramBatchResponse|null
     {
         if ($message === null) {
             throw new TelegramMessageFailedException(null, null, 'No message provided to send()');
@@ -147,8 +153,23 @@ class Telegram
         throw new TelegramMessageFailedException(null, get_class($message), 'No receivers specified');
     }
 
-    protected function sendMessageToSingle($message, string $chatId): TelegramResponse
+    protected function sendMessageToSingle($message, string $chatId): ?TelegramResponse
     {
+        return $this->deliver($message, $chatId);
+    }
+
+    /**
+     * One message to one chat: sending event, the call, then sent or failed event.
+     * Null when a DelivraMessageSending listener returns false.
+     *
+     * @throws TelegramMessageFailedException (BotBlockedException, RateLimitedException)
+     */
+    public function deliver(TelegramMessageAbstract $message, string $chatId, mixed $notifiable = null, mixed $notification = null): ?TelegramResponse
+    {
+        if (empty($message->getToken()) && $this->defaultToken) {
+            $message->token($this->defaultToken);
+        }
+
         $endpoint           = $this->getEndpointForMessage($message);
         $payload            = $message->toArray();
         $payload['chat_id'] = $chatId;
@@ -156,17 +177,20 @@ class Telegram
         $token = $this->getTokenForMessage($message);
         $body  = $this->getMessageBody($message);
 
-        event(new DelivraMessageSending('telegram', $chatId, $body, $payload, null, $token, null, null, $message));
+        // halt mode: Laravel never puts a listener's false into the normal results
+        if (event(new DelivraMessageSending('telegram', $chatId, $body, $payload, null, $token, $notifiable, $notification, $message), [], true) === false) {
+            return null;
+        }
 
         try {
-            $result = $this->request($endpoint, $payload, $token);
+            $result = $this->request($endpoint, $payload, $token, attachments: $message->attachments());
 
             $responseObj = new TelegramResponse($chatId, $result);
-            event(new DelivraMessageSent('telegram', $chatId, $body, $responseObj->getMessageId(), $responseObj, null, null, $message));
+            event(new DelivraMessageSent('telegram', $chatId, $body, $responseObj->getMessageId(), $responseObj, $notifiable, $notification, $message));
 
             return $responseObj;
         } catch (\Throwable $e) {
-            event(new DelivraMessageFailed('telegram', $chatId, $body, $e->getMessage(), $e, null, null, $message));
+            event(new DelivraMessageFailed('telegram', $chatId, $body, $e->getMessage(), $e, $notifiable, $notification, $message));
 
             if (! $e instanceof ApiErrorException) {
                 report($e);
@@ -245,13 +269,13 @@ class Telegram
     /**
      * Retries connection failures and 5xx only. Telegram's 4xx answers come back as they are.
      */
-    protected function request(string $method, array $params, ?string $token, ?int $timeout = null): array
+    protected function request(string $method, array $params, ?string $token, ?int $timeout = null, array $attachments = []): array
     {
         if (blank($token)) {
             throw new InvalidTokenException;
         }
 
-        $response = Http::timeout($timeout ?? config('delivra.http.timeout', 10))
+        $request = Http::timeout($timeout ?? config('delivra.http.timeout', 10))
             ->connectTimeout(config('delivra.http.connect_timeout', 5))
             ->retry(
                 config('delivra.http.retries', 3),
@@ -259,8 +283,18 @@ class Telegram
                 fn (\Throwable $e) => $e instanceof ConnectionException || ($e instanceof RequestException && $e->response->serverError()),
                 throw: false,
             )
-            ->acceptJson()
-            ->post("https://api.telegram.org/bot{$token}/{$method}", $params);
+            ->acceptJson();
+
+        foreach ($attachments as $field => $path) {
+            $request->attach($field, File::get($path), basename($path));
+        }
+
+        // multipart fields are text: booleans as "true"/"false", the rest as strings
+        if ($attachments !== []) {
+            $params = array_map(fn ($value) => is_bool($value) ? ($value ? 'true' : 'false') : (string) $value, $params);
+        }
+
+        $response = $request->post("https://api.telegram.org/bot{$token}/{$method}", $params);
 
         $result = (array) $response->json();
 
@@ -290,28 +324,17 @@ class Telegram
 
     protected function sendMessageToMultiple($message, array $chatIds): TelegramBatchResponse
     {
-        $batch    = new TelegramBatchResponse;
-        $endpoint = $this->getEndpointForMessage($message);
-        $token    = $this->getTokenForMessage($message);
-        $body     = $this->getMessageBody($message);
+        $batch = new TelegramBatchResponse;
 
         foreach ($chatIds as $chatId) {
-            $payload            = $message->toArray();
-            $payload['chat_id'] = $chatId;
-
-            event(new DelivraMessageSending('telegram', $chatId, $body, $payload, null, $token, null, null, $message));
-
             try {
-                $result = $this->request($endpoint, $payload, $token);
-
-                $responseObj = new TelegramResponse($chatId, $result);
-                event(new DelivraMessageSent('telegram', $chatId, $body, $responseObj->getMessageId(), $responseObj, null, null, $message));
-                $batch->addSuccess($chatId, $responseObj);
+                if ($response = $this->deliver($message, (string) $chatId)) {
+                    $batch->addSuccess($chatId, $response);
+                }
 
                 // Throttle to avoid 429 errors (Telegram limit: ~30 messages/second)
                 usleep(35000); // ~35ms = ~28 messages/second (safe margin)
-            } catch (\Throwable $e) {
-                event(new DelivraMessageFailed('telegram', $chatId, $body, $e->getMessage(), $e, null, null, $message));
+            } catch (TelegramMessageFailedException $e) {
                 $batch->addFailure($chatId, $e->getMessage());
             }
         }
@@ -325,17 +348,15 @@ class Telegram
 
     public function getEndpointForMessage($message): string
     {
-        $class = get_class($message);
-
         return match (true) {
-            $class === TextMessage::class     => 'sendMessage',
-            $class === PhotoMessage::class    => 'sendPhoto',
-            $class === VideoMessage::class    => 'sendVideo',
-            $class === DocumentMessage::class => 'sendDocument',
-            $class === PollMessage::class     => 'sendPoll',
-            $class === LocationMessage::class => 'sendLocation',
-            $class === ContactMessage::class  => 'sendContact',
-            default                           => throw new TelegramMessageFailedException(null, $class, 'Unknown message type'),
+            $message instanceof TextMessage     => 'sendMessage',
+            $message instanceof PhotoMessage    => 'sendPhoto',
+            $message instanceof VideoMessage    => 'sendVideo',
+            $message instanceof DocumentMessage => 'sendDocument',
+            $message instanceof PollMessage     => 'sendPoll',
+            $message instanceof LocationMessage => 'sendLocation',
+            $message instanceof ContactMessage  => 'sendContact',
+            default                             => throw new TelegramMessageFailedException(null, get_class($message), 'Unknown message type'),
         };
     }
 

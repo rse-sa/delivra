@@ -2,10 +2,6 @@
 
 namespace RSE\Delivra\Telegram\Messages;
 
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Http;
-use RSE\Delivra\Exceptions\Telegram\ApiErrorException;
-
 class VideoMessage extends TelegramMessageAbstract
 {
     protected ?string $video = null;
@@ -102,49 +98,28 @@ class VideoMessage extends TelegramMessageAbstract
         return $this->token;
     }
 
+    public function getCaption(): ?string
+    {
+        return $this->caption;
+    }
+
+    /**
+     * Local paths are uploaded; URLs or file_ids go in the video and thumbnail fields.
+     */
     public function toArray(): array
     {
-        return [
+        return $this->prepareBasicParameters('', [
+            'video'     => $this->fileField($this->video),
+            'thumbnail' => $this->fileField($this->thumbnail),
             'caption'   => $this->caption,
             'width'     => $this->width,
             'height'    => $this->height,
             'duration'  => $this->duration,
-            'thumbnail' => $this->thumbnail,
-        ];
+        ]);
     }
 
-    public function send(): \RSE\Delivra\Telegram\TelegramResponse
+    public function attachments(): array
     {
-        $this->validateTokenAndReceivers();
-
-        $request = Http::timeout(config('delivra.http.timeout', 10))
-            ->connectTimeout(config('delivra.http.connect_timeout', 5))
-            ->retry(config('delivra.http.retries', 3), config('delivra.http.retry_delay', 100))
-            ->acceptJson()
-            ->asMultipart()
-            ->attach('video', File::get($this->video), basename($this->video));
-
-        if ($this->thumbnail) {
-            $request->attach('thumbnail', File::get($this->thumbnail), basename($this->thumbnail));
-        }
-
-        $response = $request->post("https://api.telegram.org/bot{$this->token}/sendVideo", $this->prepareBasicParameters($this->receivers[0], [
-            'caption'  => $this->caption,
-            'width'    => $this->width,
-            'height'   => $this->height,
-            'duration' => $this->duration,
-        ]));
-
-        $result = $response->json();
-
-        if (! ($result['ok'] ?? false)) {
-            throw new ApiErrorException(
-                $result['error_code'] ?? 'UNKNOWN',
-                $result['description'] ?? 'Unknown error',
-                $result
-            );
-        }
-
-        return new \RSE\Delivra\Telegram\TelegramResponse($this->receivers[0], $result);
+        return $this->localFiles(['video' => $this->video, 'thumbnail' => $this->thumbnail]);
     }
 }

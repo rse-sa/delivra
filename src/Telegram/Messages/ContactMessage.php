@@ -2,9 +2,6 @@
 
 namespace RSE\Delivra\Telegram\Messages;
 
-use Illuminate\Support\Facades\Http;
-use RSE\Delivra\Exceptions\Telegram\ApiErrorException;
-
 class ContactMessage extends TelegramMessageAbstract
 {
     protected ?string $phoneNumber = null;
@@ -75,39 +72,11 @@ class ContactMessage extends TelegramMessageAbstract
 
     public function toArray(): array
     {
-        return [
+        return $this->prepareBasicParameters('', [
             'phone_number' => $this->phoneNumber,
             'first_name'   => $this->firstName,
             'last_name'    => $this->lastName,
             'vcard'        => $this->vCard,
-        ];
-    }
-
-    public function send(): \RSE\Delivra\Telegram\TelegramResponse
-    {
-        $this->validateTokenAndReceivers();
-
-        $response = Http::timeout(config('delivra.http.timeout', 10))
-            ->connectTimeout(config('delivra.http.connect_timeout', 5))
-            ->retry(config('delivra.http.retries', 3), config('delivra.http.retry_delay', 100))
-            ->acceptJson()
-            ->post("https://api.telegram.org/bot{$this->token}/sendContact", $this->prepareBasicParameters($this->receivers[0], [
-                'phone_number' => $this->phoneNumber,
-                'first_name'   => $this->firstName,
-                'last_name'    => $this->lastName,
-                'vcard'        => $this->vCard,
-            ]));
-
-        $result = $response->json();
-
-        if (! ($result['ok'] ?? false)) {
-            throw new ApiErrorException(
-                $result['error_code'] ?? 'UNKNOWN',
-                $result['description'] ?? 'Unknown error',
-                $result
-            );
-        }
-
-        return new \RSE\Delivra\Telegram\TelegramResponse($this->receivers[0], $result);
+        ]);
     }
 }

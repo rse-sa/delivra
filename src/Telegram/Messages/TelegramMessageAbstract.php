@@ -4,6 +4,9 @@ namespace RSE\Delivra\Telegram\Messages;
 
 use RSE\Delivra\Exceptions\Telegram\InvalidChatIdException;
 use RSE\Delivra\Exceptions\Telegram\InvalidTokenException;
+use RSE\Delivra\Telegram\Telegram;
+use RSE\Delivra\Telegram\TelegramBatchResponse;
+use RSE\Delivra\Telegram\TelegramResponse;
 
 abstract class TelegramMessageAbstract
 {
@@ -172,8 +175,56 @@ abstract class TelegramMessageAbstract
             ]);
         }
 
-        return array_filter($params);
+        // drop only nulls: false and 0 are real values (is_anonymous, correct_option_id)
+        return array_filter($params, fn ($value) => $value !== null && $value !== '');
     }
 
+    /**
+     * Sends through the Telegram manager: default token and chat, sending events, and a batch for many receivers.
+     * Null when a DelivraMessageSending listener cancelled it.
+     */
+    public function send(): TelegramResponse|TelegramBatchResponse|null
+    {
+        return app(Telegram::class)->send($this);
+    }
+
+    /**
+     * Local files to upload, keyed by the Bot API field name.
+     *
+     * @return array<string, string>
+     */
+    public function attachments(): array
+    {
+        return [];
+    }
+
+    /**
+     * A path to an existing file is uploaded. Anything else (URL, Telegram file_id) goes as text.
+     */
+    protected function isLocalFile(?string $value): bool
+    {
+        return $value !== null && is_file($value);
+    }
+
+    /**
+     * The value to put in the payload for a file field: null when the file is uploaded instead.
+     */
+    protected function fileField(?string $value): ?string
+    {
+        return $this->isLocalFile($value) ? null : $value;
+    }
+
+    /**
+     * @param  array<string, ?string>  $files
+     * @return array<string, string>
+     */
+    protected function localFiles(array $files): array
+    {
+        return array_filter($files, fn ($value) => $this->isLocalFile($value));
+    }
+
+    /**
+     * Bot API parameters without chat_id; the manager adds it per receiver.
+     */
     abstract public function toArray(): array;
 }
