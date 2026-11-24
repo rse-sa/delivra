@@ -50,14 +50,17 @@ abstract class TelegramMessageAbstract
         return $this->receivers;
     }
 
-    public function token(string $token): self
+    /**
+     * Null keeps the message without a token, so Telegram::send() falls back to the default one.
+     */
+    public function token(?string $token): self
     {
         $this->token = $token;
 
         return $this;
     }
 
-    public function setToken(string $token): self
+    public function setToken(?string $token): self
     {
         return $this->token($token);
     }
