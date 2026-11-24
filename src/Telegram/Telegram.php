@@ -6,6 +6,7 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
+use RSE\Delivra\Concerns\HasCustomSenders;
 use RSE\Delivra\Events\DelivraMessageFailed;
 use RSE\Delivra\Events\DelivraMessageSending;
 use RSE\Delivra\Events\DelivraMessageSent;
@@ -27,6 +28,8 @@ use RSE\Delivra\Telegram\Updates\Update;
 
 class Telegram
 {
+    use HasCustomSenders;
+
     protected array $config;
 
     protected ?string $defaultToken;

@@ -4,6 +4,7 @@ namespace RSE\Delivra\Fcm\Channels;
 
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Collection;
+use RSE\Delivra\Fcm\FcmManager;
 use RSE\Delivra\Fcm\FcmReport;
 use RSE\Delivra\Fcm\Messages\FcmMessage;
 use RSE\Delivra\Fcm\PendingFcm;
@@ -16,10 +17,16 @@ class FcmChannel
 
     /**
      * Never throws for token or delivery failures, only for configuration errors.
+     * Nothing sent is [], as on every delivra channel.
      */
-    public function send(object $notifiable, Notification $notification): ?FcmReport
+    public function send(object $notifiable, Notification $notification): FcmReport|array
     {
         $route = $this->route($notifiable, $notification);
+
+        // a route object goes to the sender registered with FcmManager::sendUsing()
+        if (FcmManager::senderFor($route)) {
+            return FcmManager::sendThroughSender($notification->toFcm($notifiable), $route, $notifiable, $notification);
+        }
 
         if ($this->isPlatformMap($route)) {
             $report = null;
@@ -34,10 +41,10 @@ class FcmChannel
                 $report = $sent ? ($report?->merge($sent) ?? $sent) : $report;
             }
 
-            return $report;
+            return $report ?? [];
         }
 
-        return $this->deliver($notifiable, $notification, $notification->toFcm($notifiable), $route);
+        return $this->deliver($notifiable, $notification, $notification->toFcm($notifiable), $route) ?? [];
     }
 
     protected function deliver(object $notifiable, Notification $notification, ?FcmMessage $message, mixed $tokens): ?FcmReport

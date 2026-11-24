@@ -7,6 +7,7 @@ use Illuminate\Http\Client\Pool;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Sleep;
+use RSE\Delivra\Concerns\HasCustomSenders;
 use RSE\Delivra\Events\DelivraMessageFailed;
 use RSE\Delivra\Events\DelivraMessageSending;
 use RSE\Delivra\Events\DelivraMessageSent;
@@ -21,6 +22,8 @@ use Throwable;
  */
 class FcmManager
 {
+    use HasCustomSenders;
+
     /** Marker for a 401 that a fresh OAuth token may fix. */
     protected const REAUTH = 'reauth';
 

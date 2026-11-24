@@ -19,17 +19,29 @@ class TelegramChannel
 
         $message = $notification->toTelegram($notifiable);
 
+        // nothing sent is always [], on every delivra channel
+        if ($message === null) {
+            return [];
+        }
+
         if (! $message instanceof TelegramMessageAbstract) {
             throw new Exception('Wrong return format from toTelegram method');
         }
 
         // Get receivers from notifiable if not set on message
         if (empty($message->getReceivers())) {
-            if ($to = $notifiable->routeNotificationFor('telegram', $notification)) {
-                $message->to($to);
-            } else {
-                throw new Exception('No receivers specified for Telegram message');
+            $to = $notifiable->routeNotificationFor('telegram', $notification);
+
+            // a route object (a linked user, say) goes to the sender registered with Telegram::sendUsing()
+            if (($results = Telegram::sendThroughSender($message, $to, $notifiable, $notification)) !== null) {
+                return $results;
             }
+
+            if (! $to) {
+                return [];
+            }
+
+            $message->to($to);
         }
 
         $receivers = $message->getReceivers();

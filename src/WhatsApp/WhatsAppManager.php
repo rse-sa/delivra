@@ -3,6 +3,7 @@
 namespace RSE\Delivra\WhatsApp;
 
 use Closure;
+use RSE\Delivra\Concerns\HasCustomSenders;
 use RSE\Delivra\Events\DelivraMessageFailed;
 use RSE\Delivra\Events\DelivraMessageSending;
 use RSE\Delivra\Events\DelivraMessageSent;
@@ -25,6 +26,8 @@ use Throwable;
  */
 class WhatsAppManager
 {
+    use HasCustomSenders;
+
     /** @var array<string, Account> */
     protected array $accounts = [];
 

@@ -3,6 +3,7 @@
 namespace RSE\Delivra\Sms;
 
 use Illuminate\Support\Collection;
+use RSE\Delivra\Concerns\HasCustomSenders;
 use RSE\Delivra\Contracts\SmsDriver;
 use RSE\Delivra\Sms\Schema\DriverDefinition;
 use RSE\Delivra\Exceptions\Sms\DriverNotFoundException;
@@ -11,6 +12,7 @@ use RSE\Delivra\Traits\SanitizesNumbers;
 
 class Sms
 {
+    use HasCustomSenders;
     use SanitizesNumbers;
 
     protected array $config;

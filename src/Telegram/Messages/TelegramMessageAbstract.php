@@ -99,6 +99,16 @@ abstract class TelegramMessageAbstract
         return $this;
     }
 
+    public function isSilent(): bool
+    {
+        return $this->silently;
+    }
+
+    public function getParseMode(): string
+    {
+        return $this->parseMode;
+    }
+
     public function addUrlButton(string $title, string $url): self
     {
         return $this->addRawButton([

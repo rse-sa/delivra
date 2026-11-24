@@ -6,6 +6,7 @@ use Illuminate\Notifications\Notification;
 use RSE\Delivra\Exceptions\WhatsApp\RecipientBlockedException;
 use RSE\Delivra\WhatsApp\Messages\Message;
 use RSE\Delivra\WhatsApp\Templates\Template;
+use RSE\Delivra\WhatsApp\WhatsAppManager;
 use RSE\Delivra\WhatsApp\WhatsAppResponse;
 
 class WhatsAppChannel
@@ -26,8 +27,16 @@ class WhatsAppChannel
         $manager = app('delivra-whatsapp');
         $message = $manager->prepare($message);
 
-        $recipients = $message->getRecipients()
-            ?: array_filter((array) $notifiable->routeNotificationFor('whatsapp', $notification));
+        if ($message->getRecipients() === []) {
+            $route = $notifiable->routeNotificationFor('whatsapp', $notification);
+
+            // a route object goes to the sender registered with WhatsAppManager::sendUsing()
+            if (($results = WhatsAppManager::sendThroughSender($message, $route, $notifiable, $notification)) !== null) {
+                return $results;
+            }
+        }
+
+        $recipients = $message->getRecipients() ?: array_filter((array) ($route ?? []));
 
         if ($recipients === []) {
             return [];

@@ -436,6 +436,27 @@ class NewAlert extends Notification
 
 `telegram()` also has `photo()`, `video()`, `document()`, `poll()`, `location()` and `contact()`. Each returns a message with the default token and parse mode from the config.
 
+### Custom senders
+
+`routeNotificationFor{Channel}()` usually returns an address: a chat id, a phone number, FCM tokens. It may return an object instead, when another package knows how to reach the user. Register a sender for the object's class, usually in a service provider's `boot()`:
+
+```php
+use RSE\Delivra\Telegram\Telegram;
+
+Telegram::sendUsing(LinkTarget::class, function ($message, LinkTarget $route, $notifiable, $notification) {
+    return $linkedSender->send($route, $message, $notification->id); // null when nothing was sent
+});
+
+// or an invokable class, resolved from the container on each send
+Telegram::sendUsing(LinkTarget::class, LinkedTelegramSender::class);
+```
+
+Every channel has the same hook: `Telegram::sendUsing()`, `Sms::sendUsing()`, `WhatsAppManager::sendUsing()` and `FcmManager::sendUsing()`. Each channel keeps its own senders. The channel calls the sender with the message from `to{Channel}()` and returns `[$result]`, or `[]` when the sender returns `null`. The sender fires no delivra events. Address routes go out the usual way. `rse-sa/telegram-link` uses this for linked Telegram users.
+
+### Nothing sent
+
+Every delivra channel returns `[]` when it sends nothing: no route, a `null` message, a sender that returns `null`, or `DelivraMessageSending` listeners that cancel every send. Loggers can tell it apart from a send. SMS used to return `false` and FCM `null` for these cases.
+
 ### WhatsApp and FCM notifications
 
 Build the message the same way inside `toWhatsApp()` and `toFcm()`:

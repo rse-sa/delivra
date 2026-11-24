@@ -16,22 +16,30 @@ class SmsChannel
 
     public function send($notifiable, Notification $notification)
     {
+        // nothing sent is always [], on every delivra channel
         if (! method_exists($notification, 'toSms')) {
-            return false;
+            return [];
         }
 
         $message = $notification->toSms($notifiable);
 
         if (! $message instanceof SmsBuilder) {
-            return false;
+            return [];
         }
 
         if (empty($message->getRecipients())) {
-            if ($to = $notifiable->routeNotificationFor('sms', $notification)) {
-                $message->to($to);
-            } else {
-                return false;
+            $to = $notifiable->routeNotificationFor('sms', $notification);
+
+            // a route object goes to the sender registered with Sms::sendUsing()
+            if (($results = Sms::sendThroughSender($message, $to, $notifiable, $notification)) !== null) {
+                return $results;
             }
+
+            if (! $to) {
+                return [];
+            }
+
+            $message->to($to);
         }
 
         $this->validate($message);
