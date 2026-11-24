@@ -8,6 +8,7 @@ Delivra is a developer-friendly, multichannel Laravel notification package that 
 - **Telegram Support**: All message types (Text, Photo, Video, Document, Poll, Location, Contact)
 - **WhatsApp Support**: Meta Cloud API with many business accounts, class based templates, template validation, webhooks and a test fake
 - **Push Notifications (FCM)**: Firebase HTTP v1 for Android, iOS and web, many projects, topics, invalid-token events and a test fake
+- **Web Push (VAPID)**: Browser push without Firebase, subscription storage, expired-subscription events and a test fake
 - **Hybrid Exception Strategy**: Single recipient throws immediately; batch sends all then throws with details
 - **HTTP Timeouts**: Configurable timeouts and retries prevent hanging requests
 - **Rich Response Objects**: Get message IDs, timestamps, and full API responses
@@ -376,6 +377,41 @@ Features:
 - `fcm` notification channel that accepts a token, a list, or tokens per platform.
 - `Fcm::fake()` for tests and `delivra:fcm-test` to check the setup.
 
+## Web push (VAPID)
+
+Delivra sends browser push with VAPID keys. It needs no Firebase project, so on-premise installs can use it. It needs `minishlink/web-push`.
+
+The full guide is in [docs/webpush.md](docs/webpush.md).
+
+```bash
+composer require minishlink/web-push
+php artisan delivra:webpush-vapid
+php artisan vendor:publish --tag=delivra-webpush-migrations
+php artisan vendor:publish --tag=delivra-webpush-sw
+```
+
+```php
+use RSE\Delivra\WebPush\Concerns\HasPushSubscriptions;
+
+class User extends Authenticatable
+{
+    use HasPushSubscriptions, Notifiable;
+}
+
+public function toWebPush($notifiable, $notification)
+{
+    return webpush()->message('Order ready', 'Your order #15 is ready')->url('/orders/15');
+}
+```
+
+Features:
+
+- `webpush` notification channel that reads `routeNotificationForWebPush()`.
+- Optional trait, model and migration for subscriptions, and a service worker that opens same-origin links only.
+- Per-subscription results. Expired subscriptions fire `WebPushSubscriptionExpired` and are deleted by default.
+- Only configuration errors throw. A failed push never breaks the caller.
+- `WebPush::fake()` for tests and `delivra:webpush-vapid` to generate keys.
+
 ## Laravel Notifications
 
 ### SMS Notification
@@ -451,7 +487,7 @@ Telegram::sendUsing(LinkTarget::class, function ($message, LinkTarget $route, $n
 Telegram::sendUsing(LinkTarget::class, LinkedTelegramSender::class);
 ```
 
-Every channel has the same hook: `Telegram::sendUsing()`, `Sms::sendUsing()`, `WhatsAppManager::sendUsing()` and `FcmManager::sendUsing()`. Each channel keeps its own senders. The channel calls the sender with the message from `to{Channel}()` and returns `[$result]`, or `[]` when the sender returns `null`. The sender fires no delivra events. Address routes go out the usual way. `rse-sa/telegram-link` uses this for linked Telegram users.
+Every channel has the same hook: `Telegram::sendUsing()`, `Sms::sendUsing()`, `WhatsAppManager::sendUsing()`, `FcmManager::sendUsing()` and `WebPushManager::sendUsing()`. Each channel keeps its own senders. The channel calls the sender with the message from `to{Channel}()` and returns `[$result]`, or `[]` when the sender returns `null`. The sender fires no delivra events. Address routes go out the usual way. `rse-sa/telegram-link` uses this for linked Telegram users.
 
 ### Nothing sent
 

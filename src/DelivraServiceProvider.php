@@ -13,6 +13,9 @@ use RSE\Delivra\Telegram\Channels\TelegramChannel;
 use RSE\Delivra\Telegram\Console\PollCommand as TelegramPollCommand;
 use RSE\Delivra\Telegram\Console\WebhookCommand as TelegramWebhookCommand;
 use RSE\Delivra\Telegram\Telegram;
+use RSE\Delivra\WebPush\Channels\WebPushChannel;
+use RSE\Delivra\WebPush\Console\VapidCommand as WebPushVapidCommand;
+use RSE\Delivra\WebPush\WebPushManager;
 use RSE\Delivra\WhatsApp\Channels\WhatsAppChannel;
 use RSE\Delivra\WhatsApp\Console\ListTemplatesCommand;
 use RSE\Delivra\WhatsApp\Console\MakeTemplateCommand;
@@ -47,6 +50,12 @@ class DelivraServiceProvider extends ServiceProvider
 
         $this->app->alias('delivra-fcm', FcmManager::class);
 
+        $this->app->singleton('delivra-webpush', function ($app) {
+            return new WebPushManager($app->make('config')->get('delivra.webpush', []));
+        });
+
+        $this->app->alias('delivra-webpush', WebPushManager::class);
+
         $this->app->bind(WebhookHandler::class, function ($app) {
             return new WebhookHandler(
                 $app->make('delivra-whatsapp'),
@@ -72,10 +81,19 @@ class DelivraServiceProvider extends ServiceProvider
                 __DIR__ . '/../stubs/whatsapp-template.stub' => base_path('stubs/whatsapp-template.stub'),
             ], 'delivra-stubs');
 
+            $this->publishes([
+                __DIR__ . '/../stubs/create_push_subscriptions_table.php.stub' => database_path('migrations/' . date('Y_m_d_His') . '_create_push_subscriptions_table.php'),
+            ], 'delivra-webpush-migrations');
+
+            $this->publishes([
+                __DIR__ . '/../stubs/sw.js' => public_path('sw.js'),
+            ], 'delivra-webpush-sw');
+
             $this->commands([
                 ListTemplatesCommand::class,
                 MakeTemplateCommand::class,
                 FcmTestCommand::class,
+                WebPushVapidCommand::class,
                 TelegramWebhookCommand::class,
                 TelegramPollCommand::class,
             ]);
@@ -105,6 +123,12 @@ class DelivraServiceProvider extends ServiceProvider
             if ($name = config('delivra.fcm.channel')) {
                 $manager->extend($name, function () {
                     return new FcmChannel;
+                });
+            }
+
+            if ($name = config('delivra.webpush.channel')) {
+                $manager->extend($name, function () {
+                    return new WebPushChannel;
                 });
             }
         });

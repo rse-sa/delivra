@@ -3,6 +3,7 @@
 use RSE\Delivra\Fcm\FcmManager;
 use RSE\Delivra\Sms\Sms;
 use RSE\Delivra\Telegram\Telegram;
+use RSE\Delivra\WebPush\WebPushManager;
 use RSE\Delivra\WhatsApp\WhatsAppManager;
 
 if (! function_exists('sms')) {
@@ -30,5 +31,12 @@ if (! function_exists('whatsapp')) {
     function whatsapp(): WhatsAppManager
     {
         return app('delivra-whatsapp');
+    }
+}
+
+if (! function_exists('webpush')) {
+    function webpush(): WebPushManager
+    {
+        return app('delivra-webpush');
     }
 }

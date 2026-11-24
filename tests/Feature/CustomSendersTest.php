@@ -13,6 +13,8 @@ use RSE\Delivra\Sms\SmsBuilder;
 use RSE\Delivra\Telegram\Channels\TelegramChannel;
 use RSE\Delivra\Telegram\Telegram;
 use RSE\Delivra\Tests\TestCase;
+use RSE\Delivra\WebPush\Channels\WebPushChannel;
+use RSE\Delivra\WebPush\WebPushManager;
 use RSE\Delivra\WhatsApp\Channels\WhatsAppChannel;
 use RSE\Delivra\WhatsApp\WhatsAppManager;
 
@@ -20,7 +22,7 @@ class CustomSendersTest extends TestCase
 {
     protected function tearDown(): void
     {
-        foreach ([Telegram::class, Sms::class, WhatsAppManager::class, FcmManager::class] as $manager) {
+        foreach ([Telegram::class, Sms::class, WhatsAppManager::class, FcmManager::class, WebPushManager::class] as $manager) {
             $manager::flushSenders();
         }
 
@@ -37,6 +39,7 @@ class CustomSendersTest extends TestCase
             'sms'      => [Sms::class, fn () => new SmsChannel(app('delivra-sms')), 'toSms', fn () => SmsBuilder::make()->body('Hi')],
             'whatsapp' => [WhatsAppManager::class, fn () => new WhatsAppChannel, 'toWhatsApp', fn () => whatsapp()->text('Hi')],
             'fcm'      => [FcmManager::class, fn () => new FcmChannel, 'toFcm', fn () => fcm()->message('Title', 'Hi')],
+            'webpush'  => [WebPushManager::class, fn () => new WebPushChannel, 'toWebPush', fn () => webpush()->message('Title', 'Hi')],
         ];
     }
 
@@ -115,6 +118,11 @@ class CustomSendersTest extends TestCase
             }
 
             public function toFcm($notifiable, ?string $platform = null)
+            {
+                return ($this->message)();
+            }
+
+            public function toWebPush($notifiable, $notification)
             {
                 return ($this->message)();
             }

@@ -456,6 +456,7 @@ The command checks the credentials, the OAuth token exchange and one send, and s
 
 ## Not supported yet
 
-- Web Push with VAPID keys, without Firebase.
+For browser push without Firebase, see [docs/webpush.md](webpush.md).
+
 - Huawei Push Kit for Huawei devices without Google services.
 - Device group messaging.

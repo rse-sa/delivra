@@ -155,6 +155,50 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Web Push (VAPID)
+    |--------------------------------------------------------------------------
+    |
+    | Browser push without Firebase. Needs minishlink/web-push.
+    | php artisan delivra:webpush-vapid generates the keys. Keep them: new keys
+    | stop every saved subscription.
+    */
+
+    'webpush' => [
+        'vapid' => [
+            // a mailto: or https: contact for the push services. Falls back to APP_URL.
+            'subject'     => env('DELIVRA_WEBPUSH_SUBJECT'),
+            'public_key'  => env('DELIVRA_WEBPUSH_PUBLIC_KEY'),
+            'private_key' => env('DELIVRA_WEBPUSH_PRIVATE_KEY'),
+        ],
+
+        // Notification channel name. Null skips registration, via() can still use WebPushChannel::class.
+        'channel' => env('DELIVRA_WEBPUSH_CHANNEL', 'webpush'),
+
+        // Defaults for every push. A message can set its own ttl(), urgency() and topic().
+        'ttl'     => env('DELIVRA_WEBPUSH_TTL', 2419200),
+        'urgency' => env('DELIVRA_WEBPUSH_URGENCY'),
+        'topic'   => null,
+
+        // Pads payloads to hide their length. False helps old Firefox for Android.
+        'automatic_padding' => true,
+
+        // Delete a subscription model when its push service answers 404 or 410.
+        'delete_expired' => env('DELIVRA_WEBPUSH_DELETE_EXPIRED', true),
+
+        // Used by the HasPushSubscriptions trait and the published migration.
+        'subscriptions' => [
+            'model'      => RSE\Delivra\WebPush\Models\PushSubscription::class,
+            'table'      => 'push_subscriptions',
+            'connection' => null,
+
+            // Key type of the models that own subscriptions: int, uuid or ulid.
+            // Null follows Schema::morphUsingUuids() or morphUsingUlids(), integers otherwise.
+            'morph_key' => env('DELIVRA_WEBPUSH_MORPH_KEY'),
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | HTTP Client Configuration
     |--------------------------------------------------------------------------
     |
