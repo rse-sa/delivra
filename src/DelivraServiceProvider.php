@@ -7,6 +7,8 @@ use Illuminate\Support\ServiceProvider;
 use RSE\Delivra\Fcm\Channels\FcmChannel;
 use RSE\Delivra\Fcm\Console\TestCommand as FcmTestCommand;
 use RSE\Delivra\Fcm\FcmManager;
+use RSE\Delivra\InApp\Channels\InAppChannel;
+use RSE\Delivra\InApp\InAppManager;
 use RSE\Delivra\Sms\Channels\SmsChannel;
 use RSE\Delivra\Sms\Sms;
 use RSE\Delivra\Telegram\Channels\TelegramChannel;
@@ -56,6 +58,12 @@ class DelivraServiceProvider extends ServiceProvider
 
         $this->app->alias('delivra-webpush', WebPushManager::class);
 
+        $this->app->singleton('delivra-in-app', function ($app) {
+            return new InAppManager($app->make('config')->get('delivra.in_app', []));
+        });
+
+        $this->app->alias('delivra-in-app', InAppManager::class);
+
         $this->app->bind(WebhookHandler::class, function ($app) {
             return new WebhookHandler(
                 $app->make('delivra-whatsapp'),
@@ -89,6 +97,10 @@ class DelivraServiceProvider extends ServiceProvider
                 __DIR__ . '/../stubs/sw.js' => public_path('sw.js'),
             ], 'delivra-webpush-sw');
 
+            $this->publishes([
+                __DIR__ . '/../stubs/create_in_app_notifications_table.php.stub' => database_path('migrations/' . date('Y_m_d_His') . '_create_in_app_notifications_table.php'),
+            ], 'delivra-in-app-migrations');
+
             $this->commands([
                 ListTemplatesCommand::class,
                 MakeTemplateCommand::class,
@@ -105,6 +117,10 @@ class DelivraServiceProvider extends ServiceProvider
 
         if (config('delivra.telegram.webhook.enabled')) {
             $this->loadRoutesFrom(__DIR__ . '/../routes/telegram.php');
+        }
+
+        if (config('delivra.in_app.routes.enabled')) {
+            $this->loadRoutesFrom(__DIR__ . '/../routes/in-app.php');
         }
 
         $this->app->afterResolving(ChannelManager::class, function (ChannelManager $manager) {
@@ -129,6 +145,12 @@ class DelivraServiceProvider extends ServiceProvider
             if ($name = config('delivra.webpush.channel')) {
                 $manager->extend($name, function () {
                     return new WebPushChannel;
+                });
+            }
+
+            if ($name = config('delivra.in_app.channel')) {
+                $manager->extend($name, function () {
+                    return new InAppChannel;
                 });
             }
         });

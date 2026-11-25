@@ -1,0 +1,45 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::connection(config('delivra.in_app.connection'))->create(config('delivra.in_app.table', 'in_app_notifications'), function (Blueprint $table) {
+            $table->ulid('id')->primary();
+
+            // the receiver's key type. null follows Schema::morphUsingUuids() / morphUsingUlids(), integers otherwise
+            match (config('delivra.in_app.morph_key')) {
+                'uuid'  => $table->uuidMorphs('notifiable'),
+                'ulid'  => $table->ulidMorphs('notifiable'),
+                'int'   => $table->numericMorphs('notifiable'),
+                default => $table->morphs('notifiable'),
+            };
+
+            // string ids: these can point at any model, whatever its key type
+            foreach (['scope', 'subject', 'causer'] as $morph) {
+                $table->string("{$morph}_type")->nullable();
+                $table->string("{$morph}_id", 64)->nullable();
+                $table->index(["{$morph}_type", "{$morph}_id"]);
+            }
+
+            $table->string('type')->nullable();
+            $table->string('category')->nullable()->index();
+            $table->json('payload');
+            $table->timestamp('read_at')->nullable();
+            $table->timestamp('archived_at')->nullable();
+            $table->timestamps();
+
+            $table->index(['notifiable_type', 'notifiable_id', 'archived_at', 'read_at']);
+            $table->index('created_at');
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::connection(config('delivra.in_app.connection'))->dropIfExists(config('delivra.in_app.table', 'in_app_notifications'));
+    }
+};

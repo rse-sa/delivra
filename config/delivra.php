@@ -199,6 +199,50 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | In-App Notifications
+    |--------------------------------------------------------------------------
+    |
+    | Bell notifications in their own table. Text is stored as translation keys
+    | and rendered in the reader's locale. Publish the migration with
+    | php artisan vendor:publish --tag=delivra-in-app-migrations
+    */
+
+    'in_app' => [
+        // Notification channel name. Null skips registration, via() can still use InAppChannel::class.
+        'channel' => env('DELIVRA_IN_APP_CHANNEL', 'in_app'),
+
+        'model'      => RSE\Delivra\InApp\Models\InAppNotification::class,
+        'table'      => 'in_app_notifications',
+        'connection' => null,
+
+        // Key type of the receivers: int, uuid or ulid. Null follows Schema::morphUsingUuids() or
+        // morphUsingUlids(), integers otherwise. Subject, causer and scope take any key type.
+        'morph_key' => env('DELIVRA_IN_APP_MORPH_KEY'),
+
+        // Carbon translatedFormat() formats for InApp::date() and InApp::datetime().
+        'date_format'     => 'j F Y',
+        'datetime_format' => 'j F Y, g:i a',
+
+        // Rows older than this go with model:prune. Null keeps everything. Delivra schedules nothing.
+        'prune_after_days' => env('DELIVRA_IN_APP_PRUNE_AFTER_DAYS'),
+
+        // Broadcast each new notification to the receiver's private channel.
+        'broadcast' => env('DELIVRA_IN_APP_BROADCAST', false),
+
+        // The JSON shape of one notification in the routes. Extend it to add fields.
+        'resource' => RSE\Delivra\InApp\Http\Resources\InAppNotificationResource::class,
+
+        'routes' => [
+            'enabled'      => env('DELIVRA_IN_APP_ROUTES', false),
+            'prefix'       => 'in-app-notifications',
+            'middleware'   => ['api', 'auth:sanctum'],
+            'name'         => 'delivra.in-app.',
+            'max_per_page' => 50,
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | HTTP Client Configuration
     |--------------------------------------------------------------------------
     |

@@ -9,6 +9,7 @@ Delivra is a developer-friendly, multichannel Laravel notification package that 
 - **WhatsApp Support**: Meta Cloud API with many business accounts, class based templates, template validation, webhooks and a test fake
 - **Push Notifications (FCM)**: Firebase HTTP v1 for Android, iOS and web, many projects, topics, invalid-token events and a test fake
 - **Web Push (VAPID)**: Browser push without Firebase, subscription storage, expired-subscription events and a test fake
+- **In-App Notifications**: Bell notifications rendered in the reader's locale, with buttons, icons, colors, tenant scope, JSON routes and a test fake
 - **Hybrid Exception Strategy**: Single recipient throws immediately; batch sends all then throws with details
 - **HTTP Timeouts**: Configurable timeouts and retries prevent hanging requests
 - **Rich Response Objects**: Get message IDs, timestamps, and full API responses
@@ -411,6 +412,53 @@ Features:
 - Per-subscription results. Expired subscriptions fire `WebPushSubscriptionExpired` and are deleted by default.
 - Only configuration errors throw. A failed push never breaks the caller.
 - `WebPush::fake()` for tests and `delivra:webpush-vapid` to generate keys.
+
+## In-app notifications
+
+Delivra stores bell notifications in its own `in_app_notifications` table. Text is stored as translation keys with params. Each read renders it in the reader's locale and timezone.
+
+The full guide is in [docs/in-app.md](docs/in-app.md).
+
+```bash
+php artisan vendor:publish --tag=delivra-in-app-migrations
+php artisan migrate
+```
+
+```php
+use RSE\Delivra\Facades\InApp;
+use RSE\Delivra\InApp\Concerns\HasInAppNotifications;
+use RSE\Delivra\InApp\Messages\InAppButton;
+use RSE\Delivra\InApp\Messages\InAppMessage;
+
+class User extends Authenticatable
+{
+    use HasInAppNotifications, Notifiable;
+}
+
+public function toInApp(User $user): InAppMessage
+{
+    return InAppMessage::make('notifications.task.assigned', ['task' => $this->task->title])
+        ->body('notifications.task.due', ['date' => InApp::date($this->task->due_at)])
+        ->icon('fa-solid fa-list-check')
+        ->color('warning')
+        ->category('tasks')
+        ->subject($this->task)
+        ->route('tasks.show', ['task' => $this->task])
+        ->button('notifications.actions.approve', fn (InAppButton $button) => $button
+            ->route('tasks.approve', ['task' => $this->task])
+            ->post()
+            ->color('success'));
+}
+```
+
+Features:
+
+- `in_app` notification channel. It never touches Laravel's `database` channel or `notifications` table.
+- Any number of buttons, each with a label, link, HTTP method, color, icon, params and a mark-as-read flag.
+- Subject, causer and tenant scope morphs, a category, and free data.
+- Read, unread, archive and delete, from the model, the notifiable trait or optional JSON routes.
+- An event for each new row, with optional broadcasting for real-time bells.
+- `InApp::fake()` for tests, and `MassPrunable` for old rows.
 
 ## Laravel Notifications
 
