@@ -2,6 +2,7 @@
 
 namespace RSE\Delivra\Tests\Feature\InApp;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use RSE\Delivra\Exceptions\InApp\InvalidPayloadException;
 use RSE\Delivra\Facades\InApp;
@@ -119,6 +120,59 @@ class InAppRenderingTest extends InAppTestCase
         $notification = InApp::send($this->user(), InAppMessage::make(InApp::text('Imported row')));
 
         $this->assertSame('Imported row', $notification->render('ar')['title']);
+    }
+
+    public function test_translations_render_the_reader_locale_then_the_fallback(): void
+    {
+        config(['app.fallback_locale' => 'en']);
+
+        $notification = InApp::send($this->user(), InAppMessage::make('notifications.welcome.title', [
+            'name' => InApp::translations(['ar' => 'اعتماد العقود', 'en' => 'Contract approval']),
+        ]));
+
+        $this->assertSame('Welcome Contract approval', $notification->render('en')['title']);
+        $this->assertSame('Welcome Contract approval', $notification->render('fr')['title']);
+        $this->assertSame('مرحبًا اعتماد العقود', $notification->fresh()->render('ar')['title']);
+    }
+
+    public function test_translations_fall_back_to_the_first_text_and_work_as_a_title(): void
+    {
+        $user = $this->user();
+
+        $only  = InApp::send($user, InAppMessage::make(InApp::translations(['ar' => 'إعلان'])));
+        $empty = InApp::send($user, InAppMessage::make(InApp::translations([])));
+
+        $this->assertSame('إعلان', $only->render('en')['title']);
+        $this->assertSame('', $empty->render('en')['title']);
+        $this->assertSame([], (array) $empty->payload['title']['v']);
+    }
+
+    public function test_translated_reads_every_translation_of_a_model_attribute(): void
+    {
+        $workflow = new class extends Model
+        {
+            protected $attributes = ['name' => '{"ar":"اعتماد العقود","en":"Contract approval"}'];
+
+            public function getTranslations(string $attribute): array
+            {
+                return json_decode($this->attributes[$attribute], true);
+            }
+        };
+
+        $notification = InApp::send($this->user(), InAppMessage::make(InApp::translated($workflow, 'name')));
+
+        $this->assertSame('Contract approval', $notification->render('en')['title']);
+        $this->assertSame('اعتماد العقود', $notification->render('ar')['title']);
+    }
+
+    public function test_translated_keeps_a_plain_attribute_as_literal_text(): void
+    {
+        $task = Task::query()->create(['title' => 'Roof']);
+
+        $notification = InApp::send($this->user(), InAppMessage::make(InApp::translated($task, 'title')));
+
+        $this->assertSame('Roof', $notification->render('ar')['title']);
+        $this->assertSame('text', $notification->payload['title']['t']);
     }
 
     public function test_render_hooks_run_for_the_type_then_the_category(): void

@@ -164,6 +164,17 @@ A plain string or number param is stored as it is. Use it for names, titles and 
 | `InApp::date($value, $format)` | A date in the reader's locale. Stored as `Y-m-d`, so it never moves a day between timezones. `null` renders as an empty string. |
 | `InApp::datetime($value, $format)` | A date and time in the reader's locale and timezone. Stored in UTC. |
 | `InApp::text($text)` | Literal text, the same in every locale. For imported rows or text the app has in one language only. |
+| `InApp::translations(['ar' => ..., 'en' => ...])` | Text the app holds per locale. Renders the reader's locale, then `app.fallback_locale`, then the first text. |
+| `InApp::translated($model, 'name')` | Every translation of a translatable attribute (`getTranslations()` from spatie/laravel-translatable). A plain attribute becomes `InApp::text()`. |
+
+`translated()` copies the translations when the notification is sent. A workflow renamed later keeps its old name in old rows, and a deleted one does not break them.
+
+```php
+->body('notifications.workflow.pending', [
+    'workflow' => InApp::translated($instance->dynaflow, 'name'),
+    'step'     => InApp::translated($step, 'name'),
+])
+```
 
 A backed enum param is stored as its value. A `DateTimeInterface` param is stored as a datetime.
 
@@ -248,6 +259,8 @@ $notification->isArchived();
 InAppNotification::query()->unread()->withoutArchived()->category(['tasks', 'comments'])->get();
 InAppNotification::query()->forSubject($task)->delete();   // when the task is deleted
 ```
+
+Each row keeps Laravel's notification id in `notification_id`. Every channel of one send gets the same id, so a phone inbox entry can find its bell row: `$user->inAppNotifications()->where('notification_id', $id)`. Rows from `InApp::send()` have no id.
 
 Query scopes: `unread()`, `read()`, `archived()`, `withoutArchived()`, `category()`, `forScope($model)`, `forSubject($model)`, `visibleInScope($model)`. Relations: `notifiable`, `subject`, `causer`, `scopeable`.
 
@@ -360,7 +373,7 @@ Delivra's own `DelivraMessageSending` event works too: a listener that returns `
 
 ## Send events
 
-Like every Delivra channel, the in-app channel fires `DelivraMessageSending` before storing and `DelivraMessageSent` after. The channel name is `in_app`, the recipient is `{morph class}:{key}`, and the body is the title key (or the literal title for `InApp::text()`). The sent event's response is the stored model.
+Like every Delivra channel, the in-app channel fires `DelivraMessageSending` before storing and `DelivraMessageSent` after. The channel name is `in_app`, the recipient is `{morph class}:{key}`, and the body is the title key (or, for a title without a key, the title rendered in the app locale). The sent event's response is the stored model.
 
 ## Pruning
 

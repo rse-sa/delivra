@@ -4,6 +4,7 @@ namespace RSE\Delivra\Tests\Feature\InApp;
 
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Str;
 use RSE\Delivra\Events\DelivraMessageSending;
 use RSE\Delivra\Events\DelivraMessageSent;
 use RSE\Delivra\Facades\InApp;
@@ -31,6 +32,7 @@ class InAppChannelTest extends InAppTestCase
         $this->assertTrue($row->causer->is($causer));
         $this->assertTrue($row->scopeable->is($company));
         $this->assertSame(MessageNotification::class, $row->type);
+        $this->assertTrue(Str::isUuid($row->notification_id));
         $this->assertSame('tasks', $row->category);
         $this->assertSame(1, $row->payload['v']);
     }

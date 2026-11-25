@@ -18,6 +18,7 @@ use RSE\Delivra\InApp\Values\Choice;
 use RSE\Delivra\InApp\Values\Date;
 use RSE\Delivra\InApp\Values\Text;
 use RSE\Delivra\InApp\Values\Trans;
+use RSE\Delivra\InApp\Values\Translations;
 
 /**
  * Stores bell notifications and holds the app's hooks.
@@ -67,6 +68,30 @@ class InAppManager
     public function text(string $text): Text
     {
         return new Text($text);
+    }
+
+    /**
+     * Text per locale, the reader's one is shown.
+     *
+     * @param  array<string, string>  $translations  locale => text
+     */
+    public function translations(array $translations): Translations
+    {
+        return new Translations($translations);
+    }
+
+    /**
+     * Every translation of a translatable attribute (spatie/laravel-translatable).
+     * A plain attribute is the same text in every locale.
+     */
+    public function translated(Model $model, string $attribute): Translations|Text
+    {
+        $translatable = method_exists($model, 'getTranslations')
+            && (! method_exists($model, 'isTranslatableAttribute') || $model->isTranslatableAttribute($attribute));
+
+        return $translatable
+            ? new Translations($model->getTranslations($attribute))
+            : new Text((string) $model->getAttribute($attribute));
     }
 
     /**
@@ -120,9 +145,10 @@ class InAppManager
         $model = new $class;
 
         $model->forceFill([
-            'type'     => $notification ? $notification::class : null,
-            'category' => $message->getCategory(),
-            'payload'  => $payload,
+            'type'            => $notification ? $notification::class : null,
+            'notification_id' => $notification?->id,
+            'category'        => $message->getCategory(),
+            'payload'         => $payload,
         ]);
 
         $model->notifiable()->associate($notifiable);

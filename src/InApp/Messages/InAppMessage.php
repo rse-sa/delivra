@@ -10,6 +10,7 @@ use Illuminate\Support\Traits\Conditionable;
 use JsonSerializable;
 use RSE\Delivra\Exceptions\InApp\InvalidMessageException;
 use RSE\Delivra\InApp\Messages\Concerns\HasLink;
+use RSE\Delivra\InApp\Values\RenderContext;
 use RSE\Delivra\InApp\Values\Value;
 
 /**
@@ -224,13 +225,16 @@ class InAppMessage implements Arrayable, JsonSerializable
     }
 
     /**
-     * Short text for logs and Delivra events: the title key, or the literal title.
+     * Short text for logs and Delivra events: the title key, or the title rendered in the app locale.
      */
     public function description(): string
     {
-        $title = $this->title?->toArray() ?? [];
+        if ($this->title === null) {
+            return '';
+        }
 
-        return (string) ($title['k'] ?? $title['v'] ?? '');
+        return (string) ($this->title->toArray()['k']
+            ?? $this->title->render(new RenderContext(app()->getLocale(), (string) config('app.timezone'))));
     }
 
     /**

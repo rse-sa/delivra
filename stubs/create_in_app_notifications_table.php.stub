@@ -27,13 +27,16 @@ return new class extends Migration
             }
 
             $table->string('type')->nullable();
+            // Laravel's per-send notification id, shared by every channel of one send
+            $table->string('notification_id', 64)->nullable()->index();
             $table->string('category')->nullable()->index();
             $table->json('payload');
             $table->timestamp('read_at')->nullable();
             $table->timestamp('archived_at')->nullable();
             $table->timestamps();
 
-            $table->index(['notifiable_type', 'notifiable_id', 'archived_at', 'read_at']);
+            // short name: the default one is longer than MySQL's 64 chars
+            $table->index(['notifiable_type', 'notifiable_id', 'archived_at', 'read_at'], $table->getTable() . '_notifiable_state_index');
             $table->index('created_at');
         });
     }

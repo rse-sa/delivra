@@ -13,6 +13,8 @@ use RSE\Delivra\InApp\Testing\InAppFake;
  * @method static \RSE\Delivra\InApp\Values\Date date(\DateTimeInterface|string|null $value, ?string $format = null)
  * @method static \RSE\Delivra\InApp\Values\Date datetime(\DateTimeInterface|string|null $value, ?string $format = null)
  * @method static \RSE\Delivra\InApp\Values\Text text(string $text)
+ * @method static \RSE\Delivra\InApp\Values\Translations translations(array $translations)
+ * @method static \RSE\Delivra\InApp\Values\Translations|\RSE\Delivra\InApp\Values\Text translated(\Illuminate\Database\Eloquent\Model $model, string $attribute)
  * @method static \RSE\Delivra\InApp\Models\InAppNotification|null send(object $notifiable, \RSE\Delivra\InApp\Messages\InAppMessage $message, ?\Illuminate\Notifications\Notification $notification = null)
  * @method static void routes(array $options = [])
  *

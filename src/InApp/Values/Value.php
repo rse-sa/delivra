@@ -28,6 +28,8 @@ abstract class Value implements Arrayable, JsonSerializable
         'trans'  => Trans::class,
         'choice' => Choice::class,
         'date'   => Date::class,
+
+        'translations' => Translations::class,
     ];
 
     abstract public function render(RenderContext $context): string;
